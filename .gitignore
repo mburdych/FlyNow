@@ -1,0 +1,49 @@
+# ── Secrets ──────────────────────────────────────────────────────────────────
+.env
+.env.local
+secrets.yaml
+secrets.yaml.local
+*secrets*.yaml
+*secrets*.json
+*.secret
+
+# ── Home Assistant dev environment ───────────────────────────────────────────
+config/
+.storage/
+home-assistant.log
+home-assistant_v2.db
+home-assistant_v2.db-shm
+home-assistant_v2.db-wal
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+htmlcov/
+.coverage
+.coverage.*
+
+# ── Node / Lovelace card ─────────────────────────────────────────────────────
+node_modules/
+lovelace/flynow-card/dist/
+lovelace/flynow-card/*.js.map
+
+# ── IDE ──────────────────────────────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# ── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
