@@ -38,6 +38,9 @@ node_modules/
 lovelace/flynow-card/dist/
 lovelace/flynow-card/*.js.map
 
+# ── Claude Code local settings ───────────────────────────────────────────────
+.claude/settings.local.json
+
 # ── IDE ──────────────────────────────────────────────────────────────────────
 .vscode/settings.json
 .idea/
