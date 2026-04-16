@@ -81,39 +81,39 @@
 
 ## Traceability
 
-*Updated during roadmap creation.*
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WEATHER-01 | — | Pending |
-| WEATHER-02 | — | Pending |
-| WEATHER-03 | — | Pending |
-| WEATHER-04 | — | Pending |
-| WEATHER-05 | — | Pending |
-| TIME-01 | — | Pending |
-| TIME-02 | — | Pending |
-| TIME-03 | — | Pending |
-| TIME-04 | — | Pending |
-| FORE-01 | — | Pending |
-| FORE-02 | — | Pending |
-| HA-01 | — | Pending |
-| HA-02 | — | Pending |
-| HA-03 | — | Pending |
-| NOTIF-01 | — | Pending |
-| NOTIF-02 | — | Pending |
-| NOTIF-03 | — | Pending |
-| NOTIF-04 | — | Pending |
-| CARD-01 | — | Pending |
-| CARD-02 | — | Pending |
-| CARD-03 | — | Pending |
-| LOG-01 | — | Pending |
-| LOG-02 | — | Pending |
+| WEATHER-01 | Phase 1 | Pending |
+| WEATHER-02 | Phase 1 | Pending |
+| WEATHER-03 | Phase 1 | Pending |
+| WEATHER-04 | Phase 1 | Pending |
+| WEATHER-05 | Phase 1 | Pending |
+| TIME-01 | Phase 1 | Pending |
+| TIME-02 | Phase 1 | Pending |
+| TIME-03 | Phase 1 | Pending |
+| TIME-04 | Phase 1 | Pending |
+| FORE-01 | Phase 1 | Pending |
+| FORE-02 | Phase 1 | Pending |
+| HA-01 | Phase 1 | Pending |
+| HA-02 | Phase 1 | Pending |
+| HA-03 | Phase 1 | Pending |
+| NOTIF-01 | Phase 2 | Pending |
+| NOTIF-02 | Phase 2 | Pending |
+| NOTIF-03 | Phase 2 | Pending |
+| NOTIF-04 | Phase 2 | Pending |
+| CARD-01 | Phase 2 | Pending |
+| CARD-02 | Phase 2 | Pending |
+| CARD-03 | Phase 2 | Pending |
+| LOG-01 | Phase 3 | Pending |
+| LOG-02 | Phase 3 | Pending |
 
 **Coverage:**
 - v1 requirements: 23 total
-- Mapped to phases: 0 (roadmap not yet created)
-- Unmapped: 23 ⚠️
+- Mapped to phases: 23 ✓
+- Unmapped: 0 ✓
 
 ---
+
 *Requirements defined: 2026-04-16*
-*Last updated: 2026-04-16 after initial definition*
+*Roadmap created: 2026-04-16*
+*Last updated: 2026-04-16 after roadmap creation*
