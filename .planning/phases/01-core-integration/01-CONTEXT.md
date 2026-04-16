@@ -121,7 +121,7 @@ No external ADRs or specs exist yet — this is a greenfield project. All decisi
 <specifics>
 ## Specific Ideas
 
-- **Testing location:** Malý Maďarás airfield, ICAO: LZMADA, Slovakia. Use this as the default/example site during development and testing. Coordinates to be looked up by researcher (approx. southern Slovakia near Hungarian border).
+- **Testing location:** Malý Maďarás airfield, ICAO: LZMADA, Slovakia. Use this as the default/example site during development and testing. Coordinates: **lat 48.142866, lon 17.377625**.
 - **Wind display:** Always m/s. No unit conversion needed in v1.
 - **Day name labels in Slovak:** "Dnes" (Today), "Zajtra" (Tomorrow), then actual Slovak weekday names (Pondelok, Utorok, Streda, Štvrtok, Piatok, Sobota, Nedeľa).
 - **Evening is the primary use case.** Morning windows are important but crew's primary planning is for late-afternoon/evening flights (better thermal conditions for hot air balloons in Slovakia summer evenings).
