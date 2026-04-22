@@ -38,7 +38,7 @@ def _window(go: bool, launch_start: str = "2026-04-22T18:30:00") -> dict:
     }
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_first_go_transition_sends_all_channels() -> None:
     hass = _Hass()
     dedup_store: dict[str, datetime] = {}
@@ -64,7 +64,7 @@ async def test_first_go_transition_sends_all_channels() -> None:
     assert len(dedup_store) == 1
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_duplicate_transition_blocked_within_cooldown() -> None:
     hass = _Hass()
     now_utc = datetime(2026, 4, 22, 16, 0, tzinfo=UTC)
@@ -91,7 +91,7 @@ async def test_duplicate_transition_blocked_within_cooldown() -> None:
     assert hass.services.calls == []
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_duplicate_transition_allowed_after_cooldown() -> None:
     hass = _Hass()
     now_utc = datetime(2026, 4, 22, 16, 0, tzinfo=UTC)
@@ -117,7 +117,7 @@ async def test_duplicate_transition_allowed_after_cooldown() -> None:
     assert len(hass.services.calls) == 4
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_single_channel_failure_does_not_block_others() -> None:
     hass = _Hass(fail_notify_target="notify.pilot_phone")
     dedup_store: dict[str, datetime] = {}
