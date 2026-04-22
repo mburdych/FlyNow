@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Launch location",
+        "data": {
+          "site_name": "Launch site name",
+          "latitude": "Latitude",
+          "longitude": "Longitude"
+        }
+      },
+      "flight_parameters": {
+        "title": "Flight parameters",
+        "data": {
+          "flight_duration_min": "Flight duration (min)",
+          "prep_time_min": "Preparation time (min)",
+          "update_interval_min": "Update interval (min)"
+        }
+      },
+      "thresholds": {
+        "title": "Safety thresholds",
+        "data": {
+          "max_surface_wind_ms": "Max surface wind (m/s)",
+          "max_altitude_wind_ms": "Max altitude wind (m/s)",
+          "min_ceiling_m": "Min cloud ceiling (m)",
+          "max_precip_prob_pct": "Max precipitation probability (%)",
+          "min_visibility_km": "Min visibility (km)"
+        }
+      },
+      "notifications": {
+        "title": "Notification targets",
+        "data": {
+          "crew_notifier": "Crew notifier entity",
+          "pilot_notifier": "Pilot notifier entity",
+          "whatsapp_notifier": "WhatsApp notifier entity",
+          "calendar_entity": "Calendar entity"
+        }
+      }
+    },
+    "error": {
+      "invalid_latitude": "Latitude must be between -90 and 90.",
+      "invalid_longitude": "Longitude must be between -180 and 180.",
+      "out_of_bounds": "Value is outside supported bounds.",
+      "single_site_only": "Phase 1 supports one launch site only.",
+      "required": "This field is required."
+    }
+  }
+}
