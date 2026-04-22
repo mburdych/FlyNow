@@ -42,7 +42,8 @@
       "invalid_longitude": "Longitude must be between -180 and 180.",
       "out_of_bounds": "Value is outside supported bounds.",
       "single_site_only": "Phase 1 supports one launch site only.",
-      "required": "This field is required."
+      "required": "This field is required.",
+      "invalid_entity_id": "Entity ID must match the expected domain."
     }
   }
 }

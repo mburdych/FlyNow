@@ -82,6 +82,10 @@ def _in_range(value: float, min_value: float, max_value: float) -> bool:
     return min_value <= value <= max_value
 
 
+def _is_entity_in_domain(entity_id: str, domain: str) -> bool:
+    return entity_id.startswith(f"{domain}.") and len(entity_id) > len(domain) + 1
+
+
 class FlyNowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """3-step one-site configuration flow."""
 
@@ -203,6 +207,17 @@ class FlyNowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     errors[field] = "required"
                 else:
                     user_input[field] = value
+            if not errors:
+                notifier_fields = (
+                    CONF_CREW_NOTIFIER,
+                    CONF_PILOT_NOTIFIER,
+                    CONF_WHATSAPP_NOTIFIER,
+                )
+                for field in notifier_fields:
+                    if not _is_entity_in_domain(user_input[field], "notify"):
+                        errors[field] = "invalid_entity_id"
+                if not _is_entity_in_domain(user_input[CONF_CALENDAR_ENTITY], "calendar"):
+                    errors[CONF_CALENDAR_ENTITY] = "invalid_entity_id"
             if not errors:
                 self._data.update(user_input)
                 return self.async_create_entry(title=self._data[CONF_SITE_NAME], data=self._data)

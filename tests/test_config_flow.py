@@ -43,3 +43,23 @@ def test_notification_step_rejects_blank_notifier_targets():
 
     assert result["type"] == "form"
     assert result["errors"][const.CONF_CREW_NOTIFIER] == "required"
+
+
+def test_notification_step_rejects_invalid_entity_domains():
+    flow = FlyNowConfigFlow()
+    flow._data = {const.CONF_SITE_NAME: "Test Site"}
+
+    result = __import__("asyncio").run(
+        flow.async_step_notifications(
+            {
+                const.CONF_CREW_NOTIFIER: "sensor.bad",
+                const.CONF_PILOT_NOTIFIER: "notify.pilot",
+                const.CONF_WHATSAPP_NOTIFIER: "notify.whatsapp",
+                const.CONF_CALENDAR_ENTITY: "notify.not_calendar",
+            }
+        )
+    )
+
+    assert result["type"] == "form"
+    assert result["errors"][const.CONF_CREW_NOTIFIER] == "invalid_entity_id"
+    assert result["errors"][const.CONF_CALENDAR_ENTITY] == "invalid_entity_id"
