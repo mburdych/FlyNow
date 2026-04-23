@@ -45,6 +45,7 @@ class FlyNowStatusSensor(CoordinatorEntity, BinarySensorEntity):
             "notification_result": data.get("notification_result", {}),
             "selected_site_id": data.get("selected_site_id"),
             "sites_summary": data.get("sites_summary", {}),
+            "sites": data.get("sites", {}),
         }
         active = data.get("active_window")
         if active:

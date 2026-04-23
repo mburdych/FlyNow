@@ -2,10 +2,14 @@ import { LitElement, css, html, nothing, type TemplateResult } from "lit";
 import type {
   FlyNowConditionSet,
   FlyNowConditionValue,
+  FlyNowSiteData,
+  FlyNowSiteSummary,
   FlyNowStatusAttributes,
   HomeAssistantLike,
   WindowKey,
 } from "./types";
+
+const SITE_ORDER = ["lzmada", "katarinka", "nitra-luka"] as const;
 
 export class FlyNowCard extends LitElement {
   static properties = {
@@ -15,6 +19,7 @@ export class FlyNowCard extends LitElement {
   private _hass?: HomeAssistantLike;
   private lastKnownAttributes?: FlyNowStatusAttributes;
   private usingStaleCache = false;
+  private selectedDetailSiteId?: string;
 
   set hass(value: HomeAssistantLike | undefined) {
     const oldValue = this._hass;
@@ -35,22 +40,28 @@ export class FlyNowCard extends LitElement {
       display: grid;
       gap: 16px;
     }
-    .window-summary {
+    .sites-summary {
       display: grid;
       gap: 12px;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
-    .window-tile {
+    .site-tile {
       border: 1px solid var(--divider-color);
       border-radius: 12px;
       padding: 12px;
       background: var(--card-background-color);
+      text-align: left;
+      cursor: pointer;
     }
-    .window-name {
+    .site-name {
       margin: 0;
       font-size: 12px;
       font-weight: 600;
       text-transform: uppercase;
+    }
+    .site-tile.selected {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 1px var(--primary-color);
     }
     .status-chip {
       display: inline-block;
@@ -92,6 +103,12 @@ export class FlyNowCard extends LitElement {
     .launch-window {
       font-size: 13px;
     }
+    .selected-site-details {
+      display: grid;
+      gap: 10px;
+      border-top: 1px solid var(--divider-color);
+      padding-top: 8px;
+    }
     .stale-badge {
       padding: 6px 10px;
       border-radius: 8px;
@@ -119,12 +136,13 @@ export class FlyNowCard extends LitElement {
               Data temporarily unavailable - showing last known values
             </div>`
           : nothing}
-        <div class="window-summary">
-          ${this.renderWindowTile("today_evening", "Today's Evening", attrs)}
-          ${this.renderWindowTile("tomorrow_morning", "Tomorrow Morning", attrs)}
+        <div class="sites-summary">
+          ${SITE_ORDER.map((siteId) => this.renderSiteTile(siteId, attrs))}
         </div>
-        ${this.renderConditionSection(attrs)}
-        ${this.renderLaunchWindow(attrs)}
+        <div class="selected-site-details">
+          ${this.renderConditionSection(attrs)}
+          ${this.renderLaunchWindow(attrs)}
+        </div>
       </div>
     </ha-card>`;
   }
@@ -152,22 +170,29 @@ export class FlyNowCard extends LitElement {
     return undefined;
   }
 
-  private renderWindowTile(
-    key: WindowKey,
-    label: string,
-    attrs: FlyNowStatusAttributes
-  ): TemplateResult {
-    const go = Boolean(attrs[`${key}_go`]);
-    return html`<section class="window-tile">
-      <p class="window-name">${label}</p>
+  private renderSiteTile(siteId: string, attrs: FlyNowStatusAttributes): TemplateResult {
+    const summary: FlyNowSiteSummary = attrs.sites_summary?.[siteId] ?? {};
+    const go = Boolean(summary.go);
+    const selected = this.getSelectedSiteId(attrs) === siteId;
+    return html`<button
+      type="button"
+      class="site-tile ${selected ? "selected" : ""}"
+      @click=${() => this.selectSite(siteId)}
+    >
+      <p class="site-name">${this.getSiteLabel(siteId)}</p>
       <span class="status-chip ${go ? "go" : "no-go"}">${go ? "GO" : "NO-GO"}</span>
-    </section>`;
+      <div class="launch-window">
+        ${summary.launch_start ?? "n/a"} to ${summary.launch_end ?? "n/a"}
+      </div>
+    </button>`;
   }
 
   private renderConditionSection(attrs: FlyNowStatusAttributes): TemplateResult {
-    const active: WindowKey =
-      attrs.active_window === "tomorrow_morning" ? "tomorrow_morning" : "today_evening";
-    const conditions = attrs[`${active}_conditions`] ?? {};
+    const siteData = this.getSelectedSiteData(attrs);
+    const active = (siteData?.active_window?.type as WindowKey) ?? this.getLegacyActiveWindow(attrs);
+    const selectedConditions =
+      (active && siteData?.windows?.[active]?.conditions) || attrs[`${active}_conditions`] || {};
+    const conditions = selectedConditions as FlyNowConditionSet;
     return html`<section>
       <h3 class="section-title">Condition thresholds</h3>
       ${this.renderConditionRow("Surface wind", conditions.surface_wind)}
@@ -196,9 +221,47 @@ export class FlyNowCard extends LitElement {
   }
 
   private renderLaunchWindow(attrs: FlyNowStatusAttributes): TemplateResult {
-    const start = attrs.launch_start ?? "n/a";
-    const end = attrs.launch_end ?? "n/a";
+    const siteData = this.getSelectedSiteData(attrs);
+    const start = siteData?.active_window?.launch_start ?? attrs.launch_start ?? "n/a";
+    const end = siteData?.active_window?.launch_end ?? attrs.launch_end ?? "n/a";
     return html`<div class="launch-window">Launch by ${start} to ${end}</div>`;
+  }
+
+  private getLegacyActiveWindow(attrs: FlyNowStatusAttributes): WindowKey {
+    return attrs.active_window === "tomorrow_morning" ? "tomorrow_morning" : "today_evening";
+  }
+
+  private getSelectedSiteId(attrs: FlyNowStatusAttributes): string {
+    if (
+      this.selectedDetailSiteId &&
+      SITE_ORDER.includes(this.selectedDetailSiteId as (typeof SITE_ORDER)[number])
+    ) {
+      return this.selectedDetailSiteId;
+    }
+    const preferred = attrs.selected_site_id ?? "lzmada";
+    if (SITE_ORDER.includes(preferred as (typeof SITE_ORDER)[number])) {
+      this.selectedDetailSiteId = preferred;
+      return preferred;
+    }
+    this.selectedDetailSiteId = "lzmada";
+    return "lzmada";
+  }
+
+  private getSelectedSiteData(attrs: FlyNowStatusAttributes): FlyNowSiteData | undefined {
+    const siteId = this.getSelectedSiteId(attrs);
+    return attrs.sites?.[siteId];
+  }
+
+  private selectSite(siteId: string): void {
+    this.selectedDetailSiteId = siteId;
+    this.requestUpdate();
+  }
+
+  private getSiteLabel(siteId: string): string {
+    if (siteId === "lzmada") return "LZMADA - Maly Madaras";
+    if (siteId === "katarinka") return "Luka pri Katarinke";
+    if (siteId === "nitra-luka") return "Luka pri Nitre";
+    return siteId;
   }
 
   private formatNumber(value: number | null | undefined): string {

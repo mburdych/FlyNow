@@ -20,6 +20,9 @@ export interface FlyNowStatusAttributes {
   launch_end: string | null;
   data_last_updated_utc: string | null;
   notification_result?: Record<string, unknown>;
+  selected_site_id?: string;
+  sites_summary?: Record<string, FlyNowSiteSummary>;
+  sites?: Record<string, FlyNowSiteData>;
   today_evening_go?: boolean;
   today_evening_launch_start?: string | null;
   today_evening_launch_end?: string | null;
@@ -28,6 +31,30 @@ export interface FlyNowStatusAttributes {
   tomorrow_morning_launch_start?: string | null;
   tomorrow_morning_launch_end?: string | null;
   tomorrow_morning_conditions?: FlyNowConditionSet;
+}
+
+export interface FlyNowSiteSummary {
+  site_name?: string;
+  go?: boolean;
+  launch_start?: string | null;
+  launch_end?: string | null;
+  active_window?: string;
+  data_last_updated_utc?: string | null;
+}
+
+export interface FlyNowSiteData {
+  site_id?: string;
+  site_name?: string;
+  windows?: Record<string, FlyNowWindowData>;
+  active_window?: FlyNowWindowData;
+}
+
+export interface FlyNowWindowData {
+  type?: string;
+  go?: boolean;
+  launch_start?: string | null;
+  launch_end?: string | null;
+  conditions?: FlyNowConditionSet;
 }
 
 export interface HassEntityState {
