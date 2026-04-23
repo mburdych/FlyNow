@@ -1,3 +1,330 @@
+# Phase 03: flight-logging - Research
+
+**Researched:** 2026-04-23  
+**Domain:** Home Assistant custom integration service + Lovelace form + local atomic persistence  
+**Confidence:** HIGH
+
+<user_constraints>
+## User Constraints (from CONTEXT.md)
+
+### Locked Decisions
+### Form Fields + Defaults
+- **D-01:** All core fields are required except notes. Required: date, balloon, launch time, duration, site, and outcome.
+- **D-02:** Form prefill behavior: date defaults to today, balloon defaults to last used balloon, site defaults to selected site, duration defaults to 90 minutes.
+- **D-03:** Outcome uses a fixed enum with options: `flown`, `cancelled-weather`, `cancelled-other`.
+- **D-04:** Launch time entry uses a local 24-hour time picker (not free text).
+
+### Claude's Discretion
+- Submission feedback microcopy and visual styling details, as long as success/error state is clear.
+- Exact list rendering density for prior logs, while preserving a clear and readable history list.
+- Internal JSON schema representation details, as long as LOG-01 fields are fully preserved and storage remains atomically safe.
+
+### Deferred Ideas (OUT OF SCOPE)
+None — discussion stayed within phase scope.
+</user_constraints>
+
+<phase_requirements>
+## Phase Requirements
+
+| ID | Description | Research Support |
+|----|-------------|------------------|
+| LOG-01 | Lovelace card includes form to log a completed flight: date, balloon, launch time, duration, site, outcome, notes | Service call pattern from custom card to backend is standard (`hass.callService`), and current card already uses Lit state/UI patterns to host the form and history list. [CITED: https://developers.home-assistant.io/docs/frontend/data/] [VERIFIED: repository code] |
+| LOG-02 | Flight logs stored locally in HA config directory (`/config/flynow_flights.json`) with atomic writes | Use HA file utilities (`write_utf8_file`/`write_utf8_file_atomic`) or `Store(..., atomic_writes=True)` behavior for all-or-nothing persistence semantics. [CITED: https://raw.githubusercontent.com/home-assistant/core/5dcbc1d5/homeassistant/util/file.py] [CITED: https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/helpers/storage.py] |
+</phase_requirements>
+
+## Summary
+
+Phase 03 should be planned as a thin end-to-end path: a Lovelace form in the existing card submits validated payloads to a new integration service, and the backend appends to a local JSON log with atomic write semantics. This aligns with the current architecture where frontend reads from `binary_sensor.flynow_status` and backend logic is centralized in `custom_components/flynow`. [VERIFIED: repository code]
+
+The highest-leverage implementation pattern is to keep logging independent from coordinator refresh flow: coordinator remains weather/status only, while a service module handles create/list log operations and file I/O. This avoids coupling logging writes to polling cadence and keeps testability focused (schema validation + persistence guarantees + card render/update). [CITED: https://developers.home-assistant.io/docs/dev_101_services/] [VERIFIED: repository code]
+
+For persistence, HA provides battle-tested primitives for all-or-nothing writes; planner should choose one canonical approach and keep schema explicit/versionable. For this phase scope and explicit path requirement (`/config/flynow_flights.json`), direct file writes via HA helpers are the most straightforward. [CITED: https://raw.githubusercontent.com/home-assistant/core/5dcbc1d5/homeassistant/util/file.py] [MEDIUM confidence]
+
+**Primary recommendation:** Implement `flynow.log_flight` as an integration service registered in `async_setup`, validate/normalize payload in backend, persist to `/config/flynow_flights.json` via HA atomic write helper, and render history from sensor attributes or a dedicated read service. [CITED: https://developers.home-assistant.io/docs/dev_101_services/] [CITED: https://developers.home-assistant.io/docs/frontend/data/]
+
+## Architectural Responsibility Map
+
+| Capability | Primary Tier | Secondary Tier | Rationale |
+|------------|--------------|----------------|-----------|
+| Flight log entry form (required fields, defaults, 24h picker) | Browser / Client | API / Backend | UX constraints (defaults, picker, submit states) are card concerns; backend still validates canonical payload. [VERIFIED: repository code] |
+| Payload validation and canonical schema enforcement | API / Backend | Browser / Client | Backend is source of truth; frontend validation is convenience, not trust boundary. [ASSUMED] |
+| Atomic JSON persistence in `/config` | API / Backend | Database / Storage | File writes happen in integration runtime using HA path and write helpers. [CITED: https://raw.githubusercontent.com/home-assistant/core/5dcbc1d5/homeassistant/util/file.py] |
+| Display prior logs in card | Browser / Client | API / Backend | Rendering is frontend; data source should come from backend-exposed state/service. [CITED: https://developers.home-assistant.io/docs/frontend/data/] |
+
+## Project Constraints (from .cursor/rules/)
+
+- No `.cursor/rules/` directory exists in this repository, so there are no additional project rule files to enforce beyond `CLAUDE.md`. [VERIFIED: repository scan]
+- No project-local `.claude/skills/` or `.agents/skills/` directories exist in this repository. [VERIFIED: repository scan]
+- `CLAUDE.md` constraints relevant to this phase:
+  - Use HA async integration patterns and config entry model. [VERIFIED: CLAUDE.md]
+  - Resolve config path with `hass.config.path()`. [VERIFIED: CLAUDE.md]
+  - Store flight logs in `/config/flynow_flights.json` (project constraint). [VERIFIED: CLAUDE.md]
+
+## Standard Stack
+
+### Core
+| Library/Module | Version | Purpose | Why Standard |
+|---------|---------|---------|--------------|
+| Home Assistant service registration (`hass.services.async_register`) | Core API (HA 2026 docs current) | Accept log submissions from frontend | Official integration action path; ensures discoverable/validated automations and service calls. [CITED: https://developers.home-assistant.io/docs/dev_101_services/] |
+| Home Assistant frontend API (`hass.callService`) | Frontend API (HA 2026 docs current) | Submit form payload from custom card | Official browser-to-backend command channel for custom cards. [CITED: https://developers.home-assistant.io/docs/frontend/data/] |
+| HA file utilities (`write_utf8_file` / `write_utf8_file_atomic`) | core@5dcbc1d5 | Atomic/all-or-nothing JSON writes | Purpose-built HA utility with explicit all-or-nothing semantics and UTF-8 handling. [CITED: https://raw.githubusercontent.com/home-assistant/core/5dcbc1d5/homeassistant/util/file.py] |
+
+### Supporting
+| Library/Module | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| `homeassistant.helpers.storage.Store` | core dev branch API | Versioned storage abstraction in `.storage` | Use when path flexibility is allowed or schema migrations need built-in support. [CITED: https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/helpers/storage.py] |
+| Lit (`lit`) | `^3.3.2` in repo | Form + list rendering in card | Already used in card; extend existing card with additional section/state. [VERIFIED: lovelace/flynow-card/package.json] |
+| TypeScript | `^6.0.3` in repo | Typed payload/UI state for logging | Keeps log payload types aligned with backend contract. [VERIFIED: lovelace/flynow-card/package.json] |
+
+### Alternatives Considered
+| Instead of | Could Use | Tradeoff |
+|------------|-----------|----------|
+| Direct `flynow_flights.json` + HA write helper | `helpers.storage.Store` | `Store` gives versioning/migration ergonomics but defaults to `.storage/<key>`, while requirement fixes explicit file path. [CITED: https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/helpers/storage.py] [VERIFIED: REQUIREMENTS.md] |
+| Integration service for submit/list | WebSocket custom command | Service calls are simpler and already idiomatic for custom card actions in HA docs. [CITED: https://developers.home-assistant.io/docs/dev_101_services/] [CITED: https://developers.home-assistant.io/docs/frontend/data/] |
+
+**Installation:** No new third-party package is required for this phase based on current scope. [VERIFIED: repository + requirements]
+
+## Architecture Patterns
+
+### System Architecture Diagram
+
+```text
+User input in FlyNow card form
+            |
+            v
+Lovelace card (Lit) validates required fields + defaults
+            |
+            v
+`hass.callService("flynow", "log_flight", payload)`
+            |
+            v
+Integration service handler (backend)
+  - normalize/validate payload
+  - load current log file (or initialize [])
+  - append record
+  - atomic write to `/config/flynow_flights.json`
+            |
+            +------------------------------+
+            |                              |
+            v                              v
+updated backend state/service         error/success response
+            |                              |
+            v                              v
+card refreshes history list         card shows clear submit feedback
+```
+
+### Recommended Project Structure
+```text
+custom_components/flynow/
+├── services.py          # log_flight service registration + handler
+├── flight_logs.py       # schema validation + read/write helpers
+├── const.py             # log schema enums/constants
+└── __init__.py          # async_setup + service lifecycle wiring
+
+lovelace/flynow-card/src/
+├── flynow-card.ts       # form UI, submit flow, history rendering
+└── types.ts             # log payload, record, outcome enum types
+```
+
+### Pattern 1: Integration-Level Service Registration
+**What:** Register `flynow.log_flight` in `async_setup`, not per-entry platform setup.  
+**When to use:** Any integration action callable from card/automation.  
+**Example:**
+```python
+# Source: https://developers.home-assistant.io/docs/dev_101_services/
+async def async_setup(hass, config):
+    async def handle_log(call):
+        ...
+    hass.services.async_register(DOMAIN, "log_flight", handle_log)
+    return True
+```
+
+### Pattern 2: Atomic Write Through HA Utility
+**What:** Serialize JSON and write using HA file helper for all-or-nothing replacement.  
+**When to use:** Persistence that must survive interruptions without partial files.  
+**Example:**
+```python
+# Source: https://raw.githubusercontent.com/home-assistant/core/5dcbc1d5/homeassistant/util/file.py
+from homeassistant.util.file import write_utf8_file
+
+path = hass.config.path("flynow_flights.json")
+write_utf8_file(path, json_payload)
+```
+
+### Pattern 3: Card-to-Backend Service Call
+**What:** Submit form payload from card via `hass.callService`.  
+**When to use:** User actions initiated from custom card UI.  
+**Example:**
+```typescript
+// Source: https://developers.home-assistant.io/docs/frontend/data/
+await this.hass.callService("flynow", "log_flight", payload);
+```
+
+### Anti-Patterns to Avoid
+- **Service registration in `async_setup_entry`:** makes services unavailable/unstable when entries are unloaded; contradicts HA guidance. [CITED: https://developers.home-assistant.io/docs/dev_101_services/]
+- **Frontend-only validation as sole gate:** allows malformed payloads from automation/manual service calls. [ASSUMED]
+- **Naive open-write without HA helper:** increases corruption risk on interrupted write path versus all-or-nothing write helpers. [CITED: https://raw.githubusercontent.com/home-assistant/core/5dcbc1d5/homeassistant/util/file.py]
+
+## Don't Hand-Roll
+
+| Problem | Don't Build | Use Instead | Why |
+|---------|-------------|-------------|-----|
+| Atomic file replacement | Custom temp-file/rename logic | `write_utf8_file` or `write_utf8_file_atomic` | HA already provides robust write helpers and error handling behavior. [CITED: https://raw.githubusercontent.com/home-assistant/core/5dcbc1d5/homeassistant/util/file.py] |
+| Action transport from card | Custom REST endpoint in card | `hass.callService` + integration service | Native HA action path integrates with permissions and tooling. [CITED: https://developers.home-assistant.io/docs/frontend/data/] [CITED: https://developers.home-assistant.io/docs/dev_101_services/] |
+| Persistent schema storage internals | Ad-hoc migration framework | HA `Store` pattern ideas (versioned data model) even if writing direct file | Avoids brittle unversioned data contracts. [CITED: https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/helpers/storage.py] |
+
+**Key insight:** This phase is mostly integration glue; leverage HA-native service and write primitives instead of custom plumbing.
+
+## Common Pitfalls
+
+### Pitfall 1: Service registered in wrong lifecycle hook
+**What goes wrong:** Service may disappear or be unavailable for validation/editing flows.  
+**Why it happens:** Registering in `async_setup_entry` instead of integration `async_setup`.  
+**How to avoid:** Register once in `async_setup`, keep handler resilient when no active entries.  
+**Warning signs:** Service not listed consistently in Developer Tools.  
+[CITED: https://developers.home-assistant.io/docs/dev_101_services/]
+
+### Pitfall 2: Non-atomic append/update flow
+**What goes wrong:** Crash/power-loss can leave truncated or invalid JSON.  
+**Why it happens:** direct write without temp+replace semantics.  
+**How to avoid:** Always write through HA UTF-8 write helpers.  
+**Warning signs:** JSON decode failures on startup/reload.  
+[CITED: https://raw.githubusercontent.com/home-assistant/core/5dcbc1d5/homeassistant/util/file.py]
+
+### Pitfall 3: Default values diverge between UI and backend
+**What goes wrong:** Stored records drift from UX expectations (e.g., duration not 90).  
+**Why it happens:** Defaults only applied client-side.  
+**How to avoid:** Re-apply defaults/validation server-side before write.  
+**Warning signs:** Missing/`null` fields in saved records.  
+[VERIFIED: CONTEXT requirements] [ASSUMED]
+
+## Code Examples
+
+Verified patterns from official sources:
+
+### Register integration service action
+```python
+# Source: https://developers.home-assistant.io/docs/dev_101_services/
+async def async_setup(hass, config):
+    async def handle_action(call):
+        ...
+    hass.services.async_register(DOMAIN, "log_flight", handle_action)
+    return True
+```
+
+### Card -> backend action call
+```typescript
+// Source: https://developers.home-assistant.io/docs/frontend/data/
+await this.hass.callService("flynow", "log_flight", {
+  date: "2026-04-23",
+  balloon: "OM-0007",
+  launch_time: "18:30",
+  duration_min: 90,
+  site: "LZMADA — Malý Madaras",
+  outcome: "flown",
+  notes: "Smooth evening"
+});
+```
+
+### Atomic UTF-8 write helper usage
+```python
+# Source: https://raw.githubusercontent.com/home-assistant/core/5dcbc1d5/homeassistant/util/file.py
+from homeassistant.util.file import write_utf8_file
+
+payload = json.dumps(logs, ensure_ascii=False, indent=2)
+write_utf8_file(hass.config.path("flynow_flights.json"), payload)
+```
+
+## State of the Art
+
+| Old Approach | Current Approach | When Changed | Impact |
+|--------------|------------------|--------------|--------|
+| Service registration scattered in platform setup | Register service actions in integration `async_setup` | Reinforced in current HA docs and 2025-2026 migration notes | More predictable action availability and automation validation. [CITED: https://developers.home-assistant.io/docs/dev_101_services/] |
+| Hand-managed file persistence patterns across integrations | HA consolidated helper patterns (`util.file`, `helpers.storage`) | Ongoing HA core standardization | Better consistency, error handling, and migration posture. [CITED: https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/helpers/storage.py] |
+
+**Deprecated/outdated:**
+- Registering new integration services in platform setup hooks is outdated guidance. [CITED: https://developers.home-assistant.io/docs/dev_101_services/]
+
+## Assumptions Log
+
+| # | Claim | Section | Risk if Wrong |
+|---|-------|---------|---------------|
+| A1 | Backend should duplicate frontend defaulting/validation for safety | Architecture Patterns, Pitfalls | Could over/under-constrain accepted payloads and increase implementation effort |
+| A2 | Exposing history via sensor attributes is acceptable versus dedicated list service | Summary | Could bloat state payload if logs grow, requiring architectural adjustment |
+
+## Open Questions (RESOLVED)
+
+1. **History size strategy (resolved):**
+   - Decision: `list_flights` returns newest-first entries bounded to `HISTORY_LIMIT = 200`.
+   - Rationale: Keeps card payload predictable while preserving full on-disk history for future pagination/export.
+   - Implementation note: The write path stores all entries; only response shaping applies the bound.
+
+2. **Malformed JSON recovery strategy (resolved):**
+   - Decision: On JSON decode failure, rename the bad file to `flynow_flights.json.corrupt-<UTC-timestamp>`, start from an empty list, and continue accepting new writes.
+   - Rationale: Avoids fail-fast lockout while preserving forensic evidence for manual recovery.
+   - Implementation note: Emit a warning log including backup path; never overwrite the malformed backup file.
+
+## Environment Availability
+
+| Dependency | Required By | Available | Version | Fallback |
+|------------|------------|-----------|---------|----------|
+| Python | Integration runtime/scripts | ✓ | 3.14.3 | — |
+| Node.js | Lovelace card build/test | ✓ | v22.22.0 | — |
+| npm | Card dependency management | ✓ | 11.11.0 | — |
+| pytest | Planned test execution | ✗ | — | Use manual HA validation until installed |
+| ruff | Linting for integration quality | ✗ | — | Defer lint gate until tool is installed |
+| mypy | Type-check quality gate | ✗ | — | Defer strict type gate until tool is installed |
+
+**Missing dependencies with no fallback:**
+- None blocking phase implementation itself.
+
+**Missing dependencies with fallback:**
+- `pytest`, `ruff`, `mypy` absent locally; phase can proceed but verification rigor is reduced.
+
+## Security Domain
+
+### Applicable ASVS Categories
+
+| ASVS Category | Applies | Standard Control |
+|---------------|---------|-----------------|
+| V2 Authentication | no | HA user/session auth already gates service calls; no new auth mechanism in scope. [ASSUMED] |
+| V3 Session Management | no | No custom session/state token handling introduced. [ASSUMED] |
+| V4 Access Control | yes | Restrict operations to HA service/action model; avoid extra unauthenticated endpoints. [CITED: https://developers.home-assistant.io/docs/dev_101_services/] |
+| V5 Input Validation | yes | Validate service payload schema server-side before write. [ASSUMED] |
+| V6 Cryptography | no | No cryptographic operations required for local flight logs. [VERIFIED: scope docs] |
+
+### Known Threat Patterns for this stack
+
+| Pattern | STRIDE | Standard Mitigation |
+|---------|--------|---------------------|
+| Malformed payload causing persistence corruption | Tampering | Strict schema validation + atomic write path + reject invalid enum values |
+| Oversized notes causing memory/state bloat | Denial of Service | Set max note length and cap records returned to card |
+| Log tampering by local file edit | Tampering | Treat file as local-trust boundary; add robust read error handling and backups |
+
+## Sources
+
+### Primary (HIGH confidence)
+- https://developers.home-assistant.io/docs/dev_101_services/ - service lifecycle and registration guidance.
+- https://developers.home-assistant.io/docs/frontend/data/ - `hass.callService` frontend API.
+- https://raw.githubusercontent.com/home-assistant/core/5dcbc1d5/homeassistant/util/file.py - HA atomic/UTF-8 write helper behavior.
+- https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/helpers/storage.py - HA `Store` behavior and atomic write option.
+- Repository code (`custom_components/flynow/*`, `lovelace/flynow-card/src/*`, `.planning/*`) - current architecture, constraints, and dependencies.
+
+### Secondary (MEDIUM confidence)
+- https://developers.home-assistant.io/docs/frontend/custom-ui/custom-card/ - custom card patterns and sizing/editor guidance.
+
+### Tertiary (LOW confidence)
+- None.
+
+## Metadata
+
+**Confidence breakdown:**
+- Standard stack: HIGH - grounded in official HA docs and current repo dependencies.
+- Architecture: HIGH - directly mapped to current project topology plus HA service/data model.
+- Pitfalls: MEDIUM - partly from official guidance, partly from operational assumptions.
+
+**Research date:** 2026-04-23  
+**Valid until:** 2026-05-23
 # Phase 3: Flight Logging - Research
 
 **Researched:** 2026-04-23
@@ -816,12 +1143,12 @@ export interface HomeAssistantLike {
 - A2: Read any existing HA integration that does similar (e.g., `shopping_list`) for the `async_setup` vs `async_setup_entry` convention.
 - A4: Write a failing-call integration test and inspect the exception type.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should `list_flights` accept a pagination/limit parameter?**
-   - What we know: Current operational tempo (crew logging ~100 flights/year) means even 5 years of history fits in one service response (~500 entries × 250 bytes = 125 KB). Not urgent.
-   - What's unclear: Whether the card should ever render older entries paged.
-   - Recommendation: Ship unbounded in Phase 3. Add `limit`/`offset` if UX feedback indicates scrolling pain. UI-SPEC does not mandate pagination.
+1. **History size strategy (resolved):**
+   - Decision: Keep full on-disk history, but cap `list_flights` response at newest 200 entries.
+   - Rationale: Prevents oversized service responses and card rendering slowdown as logs grow.
+   - Verification target: tests assert `len(list_flights.response.flights) <= 200` and ordering newest-first.
 
 2. **Should we expose an `edit_flight` or `delete_flight` service in Phase 3?**
    - What we know: UI-SPEC explicitly says "no delete/edit flow in this phase" (Copywriting Contract, destructive confirmation = `none`).
@@ -836,8 +1163,11 @@ export interface HomeAssistantLike {
    - Recommendation: English-only for Phase 3. If localization becomes needed, add keys to `strings.json` later — zero-cost migration.
 
 5. **Should we debounce concurrent "list_flights" calls from the card?**
-   - What we know: Each call is in-memory, O(n), cheap. Card only calls on mount + after submit.
-   - Recommendation: No debouncing needed in Phase 3.
+   - Resolution: No debouncing in Phase 3; bounded response size (200) and in-memory list access keep calls cheap.
+
+6. **Malformed file handling (resolved):**
+   - Decision: Recover with `*.corrupt-<UTC-timestamp>` backup + empty in-memory state.
+   - Verification target: tests assert backup file creation and successful subsequent append/list operations.
 
 ## Environment Availability
 
