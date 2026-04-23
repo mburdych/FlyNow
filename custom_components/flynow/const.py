@@ -83,7 +83,7 @@ COORDINATOR_DATA = "coordinator_data"
 SITE_CATALOG: Final[tuple[dict[str, object], ...]] = (
     {
         "id": "lzmada",
-        "name": "LZMADA - Maly Madaras",
+        "name": "LZMADA — Malý Madaras",
         "lat": 48.1429562,
         "lon": 17.3773480,
         "elevation_m": 125,
@@ -91,7 +91,7 @@ SITE_CATALOG: Final[tuple[dict[str, object], ...]] = (
     },
     {
         "id": "katarinka",
-        "name": "Luka pri Katarinke",
+        "name": "Lúka pri Katarínke",
         "lat": 48.5500809,
         "lon": 17.5535781,
         "elevation_m": 312,
@@ -99,7 +99,7 @@ SITE_CATALOG: Final[tuple[dict[str, object], ...]] = (
     },
     {
         "id": "nitra-luka",
-        "name": "Luka pri Nitre",
+        "name": "Lúka pri Nitre",
         "lat": 48.3187712,
         "lon": 18.0547891,
         "elevation_m": 141,
