@@ -1,0 +1,24 @@
+"""FlyNow integration setup."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from .const import COORDINATOR_DATA, DOMAIN, PLATFORMS
+from .coordinator import FlyNowCoordinator
+
+
+async def async_setup_entry(hass: Any, entry: Any) -> bool:
+    hass.data.setdefault(DOMAIN, {})
+    coordinator = FlyNowCoordinator(hass, entry.data)
+    await coordinator.async_config_entry_first_refresh()
+    hass.data[DOMAIN][entry.entry_id] = {COORDINATOR_DATA: coordinator}
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    return True
+
+
+async def async_unload_entry(hass: Any, entry: Any) -> bool:
+    ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if ok:
+        hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
+    return ok
