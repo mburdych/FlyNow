@@ -8,13 +8,14 @@ def _card_text() -> str:
     return CARD_SOURCE.read_text(encoding="utf-8")
 
 
-def test_card_renders_two_window_first_sections() -> None:
+def test_card_renders_multi_site_comparison_section() -> None:
     source = _card_text()
-    assert "Today's Evening" in source
-    assert "Tomorrow Morning" in source
-    assert "window-summary" in source
-    assert "today_evening" in source
-    assert "tomorrow_morning" in source
+    assert "sites-summary" in source
+    assert "LZMADA - Maly Madaras" in source
+    assert "Luka pri Katarinke" in source
+    assert "Luka pri Nitre" in source
+    assert "sites_summary" in source
+    assert "selected_site_id" in source
 
 
 def test_card_renders_condition_threshold_rows() -> None:
@@ -32,6 +33,12 @@ def test_card_renders_launch_window_phrase() -> None:
     source = _card_text()
     assert "Launch by" in source
     assert "to" in source
+
+
+def test_card_keeps_detail_section_below_comparison() -> None:
+    source = _card_text()
+    assert "selected-site-details" in source
+    assert "Condition thresholds" in source
 
 
 def test_card_has_reactive_hass_setter_for_cache_updates() -> None:
