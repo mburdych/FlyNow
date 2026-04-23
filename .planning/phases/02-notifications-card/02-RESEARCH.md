@@ -248,17 +248,13 @@ data:
 | A2 | Built-in cards cannot satisfy D-05/D-06 information hierarchy without custom card compromises | Standard Stack | Could overbuild frontend if a simpler built-in composition is acceptable |
 | A3 | Stale badge can rely on integration-provided freshness metadata without additional backend changes | Architectural Responsibility Map | Might require extra sensor attributes if freshness is not currently exposed |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Which concrete notifier entities are configured for crew and pilot?**
-   - What we know: HA notify integration supports explicit notifier actions/entities `[CITED: https://www.home-assistant.io/integrations/notify/]`.
-   - What's unclear: Exact entity IDs and whether WhatsApp bridge exists in this HA instance.
-   - Recommendation: Add config-flow fields for `crew_notifier`, `pilot_notifier`, `group_notifier` and validate existence at setup.
+1. **Which concrete notifier entities are configured for crew and pilot?**  
+   **RESOLVED:** The integration will require explicit notifier configuration via config entry fields: `crew_notifier`, `pilot_notifier`, and `group_notifier`. Setup validation will verify each entity exists in `hass.states` and block setup with a clear repairable error if any target is missing.
 
-2. **Should calendar dedup use event lookup or rely solely on notification ledger?**
-   - What we know: `calendar.create_event` action exists with deterministic payload `[CITED: https://www.home-assistant.io/integrations/calendar/#action-create-event]`.
-   - What's unclear: Whether duplicate event creation should be prevented by reading calendar events first.
-   - Recommendation: In v1, keep one dedup ledger for all channels; optionally add event-id tracking later.
+2. **Should calendar dedup use event lookup or rely solely on notification ledger?**  
+   **RESOLVED:** v1 dedup will rely solely on the shared notification ledger keyed by `window_key@launch_start` with the first-success cooldown timestamp (D-03/D-04). Calendar event lookups are deferred and can be added later if deployment evidence shows duplicate events despite ledger protection.
 
 ## Environment Availability
 

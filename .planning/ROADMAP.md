@@ -1,8 +1,8 @@
 # Roadmap: FlyNow
 
 **Created:** 2026-04-16
-**Phases:** 3
-**Requirements:** 23 v1 requirements mapped
+**Phases:** 4
+**Requirements:** 27 v1 requirements mapped
 
 ## Overview
 
@@ -11,6 +11,7 @@
 | 1 | Core Integration | 3/3 | Complete    | 2026-04-22 |
 | 2 | Notifications & Card | 2/2 | Complete   | 2026-04-23 |
 | 3 | Flight Logging | Crew can record completed flights for future learning | LOG-01–02 | 1 |
+| 4 | Multi-site forecast planning card | 1/1 | Complete | 2026-04-23 |
 
 ## Phase Details
 
@@ -131,8 +132,28 @@
 | CARD-03 | Phase 2 | Pending |
 | LOG-01 | Phase 3 | Pending |
 | LOG-02 | Phase 3 | Pending |
+| SITE-01 | Phase 4 | Complete |
+| SITE-02 | Phase 4 | Complete |
+| SITE-03 | Phase 4 | Complete |
+| SITE-04 | Phase 4 | Complete |
 
-**Coverage:** 23/23 v1 requirements mapped ✓
+**Coverage:** 27/27 v1 requirements mapped ✓
+
+### Phase 4: Multi-site forecast planning card
+
+**Goal:** Crew can compare near-term GO/NO-GO launch planning outcomes across Malý Madaras, Katarínka, and Nitra lúka in one Lovelace card, while existing automations continue to use the same `binary_sensor.flynow_status`.
+
+**Requirements:**
+- SITE-01: Integration uses exactly three predefined launch sites from `.planning/reference/launch-sites.md` with static metadata (id, name, coordinates, region/elevation context).
+- SITE-02: Coordinator computes forecast window analysis per site using existing Open-Meteo + analyzer/window logic and exposes a multi-site summary payload.
+- SITE-03: `binary_sensor.flynow_status` remains backward-compatible for selected-site automation triggers while adding explicit multi-site summary attributes for UI consumption.
+- SITE-04: Lovelace card shows comparison-first planning status for all three sites (GO/NO-GO + launch window timing) with optional selected-site detail view.
+
+**Depends on:** Phase 3
+**Plans:** 1 plans
+
+Plans:
+- [x] 04-01-PLAN.md — Add fixed three-site forecast projection and comparison-first planning card contract
 
 ---
 
