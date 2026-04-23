@@ -11,9 +11,9 @@ def _card_text() -> str:
 def test_card_renders_multi_site_comparison_section() -> None:
     source = _card_text()
     assert "sites-summary" in source
-    assert "LZMADA - Maly Madaras" in source
-    assert "Luka pri Katarinke" in source
-    assert "Luka pri Nitre" in source
+    assert "LZMADA — Malý Madaras" in source
+    assert "Lúka pri Katarínke" in source
+    assert "Lúka pri Nitre" in source
     assert "sites_summary" in source
     assert "selected_site_id" in source
 

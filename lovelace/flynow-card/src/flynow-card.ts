@@ -193,16 +193,19 @@ export class FlyNowCard extends LitElement {
     const selectedConditions =
       (active && siteData?.windows?.[active]?.conditions) || attrs[`${active}_conditions`] || {};
     const conditions = selectedConditions as FlyNowConditionSet;
+    const surfaceWind = conditions.surface_wind ?? conditions.surface_wind_ms;
+    const altitudeWind = conditions.altitude_wind ?? conditions.altitude_wind_ms;
+    const ceiling = conditions.ceiling ?? conditions.ceiling_m;
+    const precipitation =
+      conditions.precipitation_probability ?? conditions.precip_prob;
+    const visibility = conditions.visibility ?? conditions.visibility_km;
     return html`<section>
       <h3 class="section-title">Condition thresholds</h3>
-      ${this.renderConditionRow("Surface wind", conditions.surface_wind)}
-      ${this.renderConditionRow("Altitude wind", conditions.altitude_wind)}
-      ${this.renderConditionRow("Ceiling", conditions.ceiling)}
-      ${this.renderConditionRow(
-        "Precipitation probability",
-        conditions.precipitation_probability
-      )}
-      ${this.renderConditionRow("Visibility", conditions.visibility)}
+      ${this.renderConditionRow("Surface wind", surfaceWind)}
+      ${this.renderConditionRow("Altitude wind", altitudeWind)}
+      ${this.renderConditionRow("Ceiling", ceiling)}
+      ${this.renderConditionRow("Precipitation probability", precipitation)}
+      ${this.renderConditionRow("Visibility", visibility)}
     </section>`;
   }
 
@@ -258,9 +261,9 @@ export class FlyNowCard extends LitElement {
   }
 
   private getSiteLabel(siteId: string): string {
-    if (siteId === "lzmada") return "LZMADA - Maly Madaras";
-    if (siteId === "katarinka") return "Luka pri Katarinke";
-    if (siteId === "nitra-luka") return "Luka pri Nitre";
+    if (siteId === "lzmada") return "LZMADA — Malý Madaras";
+    if (siteId === "katarinka") return "Lúka pri Katarínke";
+    if (siteId === "nitra-luka") return "Lúka pri Nitre";
     return siteId;
   }
 
