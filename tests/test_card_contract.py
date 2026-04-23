@@ -32,3 +32,17 @@ def test_card_renders_launch_window_phrase() -> None:
     source = _card_text()
     assert "Launch by" in source
     assert "to" in source
+
+
+def test_card_has_reactive_hass_setter_for_cache_updates() -> None:
+    source = _card_text()
+    assert "set hass(" in source
+    assert "lastKnownAttributes" in source
+
+
+def test_card_surfaces_stale_badge_when_using_cache() -> None:
+    source = _card_text()
+    assert "stale-badge" in source
+    assert "showing last known values" in source
+    assert "unavailable" in source
+    assert "unknown" in source
