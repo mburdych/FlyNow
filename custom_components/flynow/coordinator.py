@@ -22,8 +22,12 @@ from .const import (
     CONF_MIN_VISIBILITY_KM,
     CONF_SITE_NAME,
     CONF_PREP_TIME_MIN,
+    CONF_SELECTED_SITE_ID,
     CONF_UPDATE_INTERVAL_MIN,
     CONF_WHATSAPP_NOTIFIER,
+    DEFAULT_SELECTED_SITE_ID,
+    SITE_CATALOG,
+    SITE_IDS,
 )
 from .notifications import dispatch_go_transition_notifications
 from .open_meteo import OpenMeteoError, fetch_forecast
@@ -59,25 +63,8 @@ class FlyNowCoordinator(DataUpdateCoordinator):
         self._notification_dedup: dict[str, datetime] = {}
 
     async def _async_update_data(self) -> dict[str, Any]:
-        try:
-            async with aiohttp.ClientSession() as session:
-                payload = await fetch_forecast(
-                    session, self._config[CONF_LATITUDE], self._config[CONF_LONGITUDE]
-                )
-        except OpenMeteoError as err:
-            raise UpdateFailed(str(err)) from err
-
         now_local = datetime.now()
         now_utc = datetime.now(UTC)
-        sunrise = [datetime.fromisoformat(v) for v in payload["daily"]["sunrise"][:4]]
-        sunset = [datetime.fromisoformat(v) for v in payload["daily"]["sunset"][:4]]
-        windows = build_windows(
-            now_local=now_local,
-            sunrise_by_day=sunrise,
-            sunset_by_day=sunset,
-            flight_duration_min=int(self._config[CONF_FLIGHT_DURATION_MIN]),
-            prep_time_min=int(self._config[CONF_PREP_TIME_MIN]),
-        )
         thresholds = {
             "max_surface_wind_ms": float(self._config[CONF_MAX_SURFACE_WIND_MS]),
             "max_altitude_wind_ms": float(self._config[CONF_MAX_ALTITUDE_WIND_MS]),
@@ -85,13 +72,64 @@ class FlyNowCoordinator(DataUpdateCoordinator):
             "min_ceiling_m": float(self._config[CONF_MIN_CEILING_M]),
             "min_visibility_km": float(self._config[CONF_MIN_VISIBILITY_KM]),
         }
-        result_windows: dict[str, Any] = {}
-        for window in windows:
-            result_windows[window["key"]] = {
-                **window,
-                **analyze_window(payload["hourly"], thresholds),
+        selected_site_id = str(
+            self._config.get(CONF_SELECTED_SITE_ID, DEFAULT_SELECTED_SITE_ID)
+        )
+        if selected_site_id not in SITE_IDS:
+            selected_site_id = DEFAULT_SELECTED_SITE_ID
+
+        sites: dict[str, Any] = {}
+        try:
+            async with aiohttp.ClientSession() as session:
+                for site in SITE_CATALOG:
+                    payload = await fetch_forecast(
+                        session, float(site["lat"]), float(site["lon"])
+                    )
+                    sunrise = [
+                        datetime.fromisoformat(v) for v in payload["daily"]["sunrise"][:4]
+                    ]
+                    sunset = [
+                        datetime.fromisoformat(v) for v in payload["daily"]["sunset"][:4]
+                    ]
+                    windows = build_windows(
+                        now_local=now_local,
+                        sunrise_by_day=sunrise,
+                        sunset_by_day=sunset,
+                        flight_duration_min=int(self._config[CONF_FLIGHT_DURATION_MIN]),
+                        prep_time_min=int(self._config[CONF_PREP_TIME_MIN]),
+                    )
+                    result_windows: dict[str, Any] = {}
+                    for window in windows:
+                        result_windows[window["key"]] = {
+                            **window,
+                            **analyze_window(payload["hourly"], thresholds),
+                        }
+                    site_id = str(site["id"])
+                    sites[site_id] = {
+                        "site_id": site_id,
+                        "site_name": str(site["name"]),
+                        "kraj_code": str(site["kraj_code"]),
+                        "elevation_m": int(site["elevation_m"]),
+                        "windows": result_windows,
+                        "active_window": next(iter(result_windows.values()), None),
+                    }
+        except OpenMeteoError as err:
+            raise UpdateFailed(str(err)) from err
+
+        selected_site = sites.get(selected_site_id) or sites.get(DEFAULT_SELECTED_SITE_ID) or {}
+        result_windows = dict(selected_site.get("windows", {}))
+        active = selected_site.get("active_window")
+        sites_summary = {
+            site_id: {
+                "site_name": site_data.get("site_name"),
+                "go": bool((site_data.get("active_window") or {}).get("go")),
+                "launch_start": (site_data.get("active_window") or {}).get("launch_start"),
+                "launch_end": (site_data.get("active_window") or {}).get("launch_end"),
+                "active_window": (site_data.get("active_window") or {}).get("type", "none"),
+                "data_last_updated_utc": now_utc.isoformat(),
             }
-        active = next(iter(result_windows.values()), None)
+            for site_id, site_data in sites.items()
+        }
         notification_result = {
             "sent": False,
             "blocked": False,
@@ -120,4 +158,7 @@ class FlyNowCoordinator(DataUpdateCoordinator):
             "data_last_updated_utc": now_utc.isoformat(),
             "notification_result": notification_result,
             "site_name": str(self._config.get(CONF_SITE_NAME, "FlyNow")),
+            "selected_site_id": selected_site_id,
+            "sites": sites,
+            "sites_summary": sites_summary,
         }

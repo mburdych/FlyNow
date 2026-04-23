@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 DOMAIN = "flynow"
 PLATFORMS = ["binary_sensor"]
 
@@ -20,6 +22,7 @@ CONF_CREW_NOTIFIER = "crew_notifier"
 CONF_PILOT_NOTIFIER = "pilot_notifier"
 CONF_WHATSAPP_NOTIFIER = "whatsapp_notifier"
 CONF_CALENDAR_ENTITY = "calendar_entity"
+CONF_SELECTED_SITE_ID = "selected_site_id"
 
 DEFAULT_SITE_NAME = "Maly Madaras"
 DEFAULT_LATITUDE = 48.142866
@@ -76,6 +79,35 @@ WINDOW_KEYS = (
 )
 
 COORDINATOR_DATA = "coordinator_data"
+
+SITE_CATALOG: Final[tuple[dict[str, object], ...]] = (
+    {
+        "id": "lzmada",
+        "name": "LZMADA - Maly Madaras",
+        "lat": 48.1429562,
+        "lon": 17.3773480,
+        "elevation_m": 125,
+        "kraj_code": "TTSK",
+    },
+    {
+        "id": "katarinka",
+        "name": "Luka pri Katarinke",
+        "lat": 48.5500809,
+        "lon": 17.5535781,
+        "elevation_m": 312,
+        "kraj_code": "TTSK",
+    },
+    {
+        "id": "nitra-luka",
+        "name": "Luka pri Nitre",
+        "lat": 48.3187712,
+        "lon": 18.0547891,
+        "elevation_m": 141,
+        "kraj_code": "NSK",
+    },
+)
+SITE_IDS: Final[tuple[str, ...]] = ("lzmada", "katarinka", "nitra-luka")
+DEFAULT_SELECTED_SITE_ID = "lzmada"
 
 NOTIF_DEDUP_COOLDOWN_SEC = 3600
 NOTIF_WINDOW_ID_SEP = "@"
