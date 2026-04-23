@@ -26,3 +26,36 @@ def test_sensor_projects_state():
     assert attrs["data_last_updated_utc"] == "2026-04-22T10:00:00+00:00"
     assert attrs["selected_site_id"] == "lzmada"
     assert set(attrs["sites_summary"]) == {"lzmada", "katarinka", "nitra-luka"}
+
+
+def test_sensor_projects_legacy_keys_from_selected_site_payload() -> None:
+    coordinator = _Coordinator()
+    coordinator.data["active_window"] = None
+    coordinator.data["windows"] = {}
+    coordinator.data["selected_site_id"] = "katarinka"
+    coordinator.data["sites"] = {
+        "katarinka": {
+            "active_window": {
+                "go": False,
+                "type": "tomorrow_morning",
+                "launch_start": "05:30",
+                "launch_end": "06:00",
+            },
+            "windows": {
+                "tomorrow_morning": {
+                    "go": False,
+                    "launch_start": "05:30",
+                    "launch_end": "06:00",
+                    "conditions": {"surface_wind_ms": {"ok": False}},
+                }
+            },
+        }
+    }
+
+    sensor = FlyNowStatusSensor(coordinator)
+    assert sensor.is_on is False
+    attrs = sensor.extra_state_attributes
+    assert attrs["active_window"] == "tomorrow_morning"
+    assert attrs["launch_start"] == "05:30"
+    assert attrs["launch_end"] == "06:00"
+    assert attrs["tomorrow_morning_go"] is False

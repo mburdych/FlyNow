@@ -31,28 +31,36 @@ class FlyNowStatusSensor(CoordinatorEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        active = (self.coordinator.data or {}).get("active_window")
+        data = self.coordinator.data or {}
+        active = data.get("active_window")
+        if not active:
+            selected_site_id = data.get("selected_site_id")
+            selected_site = (data.get("sites") or {}).get(selected_site_id, {})
+            active = selected_site.get("active_window")
         return bool(active and active.get("go"))
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         data = self.coordinator.data or {}
+        selected_site_id = data.get("selected_site_id")
+        selected_site = (data.get("sites") or {}).get(selected_site_id, {})
+        active = data.get("active_window") or selected_site.get("active_window")
+        windows = data.get("windows") or selected_site.get("windows") or {}
         attrs: dict[str, Any] = {
             "active_window": "none",
             "launch_start": None,
             "launch_end": None,
             "data_last_updated_utc": data.get("data_last_updated_utc"),
             "notification_result": data.get("notification_result", {}),
-            "selected_site_id": data.get("selected_site_id"),
+            "selected_site_id": selected_site_id,
             "sites_summary": data.get("sites_summary", {}),
             "sites": data.get("sites", {}),
         }
-        active = data.get("active_window")
         if active:
             attrs["active_window"] = active.get("type", "none")
             attrs["launch_start"] = active.get("launch_start")
             attrs["launch_end"] = active.get("launch_end")
-        for key, item in data.get("windows", {}).items():
+        for key, item in windows.items():
             attrs[f"{key}_go"] = item.get("go")
             attrs[f"{key}_launch_start"] = item.get("launch_start")
             attrs[f"{key}_launch_end"] = item.get("launch_end")
