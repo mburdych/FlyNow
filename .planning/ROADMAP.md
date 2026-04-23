@@ -8,8 +8,8 @@
 
 | # | Phase | Goal | Requirements | Plans |
 |---|-------|------|--------------|-------|
-| 1 | Core Integration | HA knows if conditions are flyable right now | WEATHER-01–05, TIME-01–04, FORE-01–02, HA-01–03 | 3 |
-| 2 | Notifications & Card | Crew and pilot get alerted with full status visibility | NOTIF-01–04, CARD-01–03 | 2 |
+| 1 | Core Integration | 3/3 | Complete    | 2026-04-22 |
+| 2 | Notifications & Card | 2/2 | Complete   | 2026-04-23 |
 | 3 | Flight Logging | Crew can record completed flights for future learning | LOG-01–02 | 1 |
 
 ## Phase Details
@@ -35,7 +35,7 @@
 - HA-03: DataUpdateCoordinator refreshes forecast every 30–60 minutes
 
 **Plans:**
-1. Project scaffolding, Open-Meteo client, condition analyzer — builds foundation
+3/3 plans complete
 2. Sunrise/sunset calculation, time window logic, config flow setup — enables time-bound analysis
 3. DataUpdateCoordinator, sensor entities, coordinator lifecycle — proves async architecture
 
@@ -64,7 +64,7 @@
 - CARD-03: Card shows calculated launch window times (e.g. "Launch by 18:30 — Sunset 20:15")
 
 **Plans:**
-1. Notification pipeline infrastructure and deduplication logic — enables alert triggering
+2/2 plans complete
 2. Lovelace card (TypeScript, LitElement) with live state subscription — provides visual status and window details
 
 **Success Criteria** (what must be TRUE):

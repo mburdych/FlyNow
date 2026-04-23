@@ -40,9 +40,9 @@
 
 ### Lovelace Card
 
-- [ ] **CARD-01**: Card displays today's evening window and tomorrow's morning window with clear GO/NO-GO status
-- [ ] **CARD-02**: Card shows condition breakdown: surface wind, altitude wind, ceiling, precipitation, visibility — each with threshold comparison
-- [ ] **CARD-03**: Card shows calculated launch window times (e.g. "Launch by 18:30 — Sunset 20:15")
+- [x] **CARD-01**: Card displays today's evening window and tomorrow's morning window with clear GO/NO-GO status
+- [x] **CARD-02**: Card shows condition breakdown: surface wind, altitude wind, ceiling, precipitation, visibility — each with threshold comparison
+- [x] **CARD-03**: Card shows calculated launch window times (e.g. "Launch by 18:30 — Sunset 20:15")
 
 ### Flight Logging
 
@@ -101,9 +101,9 @@
 | NOTIF-02 | Phase 2 | Pending |
 | NOTIF-03 | Phase 2 | Pending |
 | NOTIF-04 | Phase 2 | Pending |
-| CARD-01 | Phase 2 | Pending |
-| CARD-02 | Phase 2 | Pending |
-| CARD-03 | Phase 2 | Pending |
+| CARD-01 | Phase 2 | Complete |
+| CARD-02 | Phase 2 | Complete |
+| CARD-03 | Phase 2 | Complete |
 | LOG-01 | Phase 3 | Pending |
 | LOG-02 | Phase 3 | Pending |
 
