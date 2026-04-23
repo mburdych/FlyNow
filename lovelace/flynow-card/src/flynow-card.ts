@@ -12,9 +12,19 @@ export class FlyNowCard extends LitElement {
     hass: { attribute: false },
   };
 
-  declare hass?: HomeAssistantLike;
+  private _hass?: HomeAssistantLike;
   private lastKnownAttributes?: FlyNowStatusAttributes;
   private usingStaleCache = false;
+
+  set hass(value: HomeAssistantLike | undefined) {
+    const oldValue = this._hass;
+    this._hass = value;
+    this.requestUpdate("hass", oldValue);
+  }
+
+  get hass(): HomeAssistantLike | undefined {
+    return this._hass;
+  }
 
   static styles = css`
     :host {
