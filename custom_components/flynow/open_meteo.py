@@ -15,7 +15,9 @@ HOURLY_FIELDS = [
     "precipitation_probability",
     "visibility",
     "cloud_cover",
-    "ceiling",
+    # Open-Meteo does not support `ceiling` in hourly requests.
+    # `cloud_base` provides cloud layer height in meters and is a usable proxy.
+    "cloud_base",
 ]
 
 
@@ -39,7 +41,10 @@ async def fetch_forecast(
     try:
         async with session.get(BASE_URL, params=params, timeout=20) as response:
             if response.status != 200:
-                raise OpenMeteoError(f"Open-Meteo returned HTTP {response.status}")
+                error_body = await response.text()
+                raise OpenMeteoError(
+                    f"Open-Meteo returned HTTP {response.status}: {error_body}"
+                )
             payload = await response.json()
     except aiohttp.ClientError as err:
         raise OpenMeteoError(f"Open-Meteo request failed: {err}") from err

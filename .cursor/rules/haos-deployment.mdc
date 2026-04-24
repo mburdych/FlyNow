@@ -1,0 +1,42 @@
+---
+description: HAOS SSH deployment target for FlyNow — always consult before any deploy/rsync/ssh work
+alwaysApply: true
+---
+
+# FlyNow HAOS deployment
+
+Full deployment reference: [.planning/reference/HAOS-DEPLOYMENT.md](../../.planning/reference/HAOS-DEPLOYMENT.md)
+
+## Quick facts
+
+- **SSH:** `miro@192.168.68.111:22` (standard port 22, NOT 22222)
+- **Key:** `~/.ssh/id_ed25519_flynow` (no passphrase)
+- **Sudo:** NOPASSWD on `miro`; `/config` is root-owned — use `sudo` for writes
+- **HA Core:** 2026.4.3, Python 3.12.13, HACS 2.0.5
+- **`ha` CLI does NOT work** from this SSH session (no supervisor token) — restart HA via UI
+
+## Deploy targets
+
+| Source | HAOS path |
+|---|---|
+| `custom_components/flynow/` | `/config/custom_components/flynow/` |
+| `lovelace/flynow-card/dist/` | `/config/www/flynow-card/` (served at `/local/flynow-card/flynow-card.js`) |
+
+**Don't use `/config/www/community/`** — that's HACS-managed.
+
+## Deploy command (tar over SSH; rsync unavailable on dev machine)
+
+```bash
+tar --exclude='__pycache__' --exclude='*.pyc' --exclude='.ruff_cache' --exclude='.mypy_cache' \
+  -czf - -C custom_components flynow \
+  | ssh -i ~/.ssh/id_ed25519_flynow -p 22 miro@192.168.68.111 \
+    "sudo tar xzf - -C /config/custom_components/"
+```
+
+After Python changes: user must restart HA via Settings → System → Restart Home Assistant.
+
+## Pre-configured HA services (use in config flow)
+
+- `notify.mobile_app_fne_nx9`, `notify.mobile_app_sm_a715f`, `notify.mobile_app_mar_lx1b`
+- `calendar.balonove_akcie` (Google, balloon events)
+- `notify.whatsapp_callmebot` (already wired with phone + API key)

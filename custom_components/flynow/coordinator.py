@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import aiohttp
+
+_LOGGER = logging.getLogger(__name__)
 
 from .analyzer import analyze_window
 from .const import (
@@ -32,6 +36,14 @@ from .open_meteo import OpenMeteoError, fetch_forecast
 from .windows import build_windows
 
 try:
+    from astral import Observer
+    from astral.sun import dawn, dusk
+except ImportError:  # pragma: no cover
+    Observer = None
+    dawn = None
+    dusk = None
+
+try:
     from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 except ImportError:  # pragma: no cover
     class UpdateFailed(Exception):
@@ -55,7 +67,7 @@ class FlyNowCoordinator(DataUpdateCoordinator):
 
     def __init__(self, hass: Any, config: dict[str, Any]):
         interval = timedelta(minutes=int(config[CONF_UPDATE_INTERVAL_MIN]))
-        super().__init__(hass, logger=None, name="flynow", update_interval=interval)
+        super().__init__(hass, logger=_LOGGER, name="flynow", update_interval=interval)
         self._config = config
         self._previous_windows: dict[str, dict[str, Any]] = {}
         self._notification_dedup: dict[str, datetime] = {}
@@ -89,8 +101,16 @@ class FlyNowCoordinator(DataUpdateCoordinator):
                     sunset = [
                         datetime.fromisoformat(v) for v in payload["daily"]["sunset"][:4]
                     ]
+                    day_start, day_end = self._easa_day_boundaries(
+                        latitude=float(site["lat"]),
+                        longitude=float(site["lon"]),
+                        sunrise_by_day=sunrise,
+                        sunset_by_day=sunset,
+                    )
                     windows = build_windows(
                         now_local=now_local,
+                        day_start_by_day=day_start,
+                        day_end_by_day=day_end,
                         sunrise_by_day=sunrise,
                         sunset_by_day=sunset,
                         flight_duration_min=int(self._config[CONF_FLIGHT_DURATION_MIN]),
@@ -160,3 +180,27 @@ class FlyNowCoordinator(DataUpdateCoordinator):
             "sites": sites,
             "sites_summary": sites_summary,
         }
+
+    def _easa_day_boundaries(
+        self,
+        latitude: float,
+        longitude: float,
+        sunrise_by_day: list[datetime],
+        sunset_by_day: list[datetime],
+    ) -> tuple[list[datetime], list[datetime]]:
+        """Compute EASA day boundaries: morning/evening civil twilight."""
+        if not Observer or not dawn or not dusk:
+            _LOGGER.warning("Astral unavailable, falling back to sunrise/sunset day boundaries")
+            return sunrise_by_day, sunset_by_day
+
+        observer = Observer(latitude=latitude, longitude=longitude)
+        tz = ZoneInfo("Europe/Bratislava")
+        starts: list[datetime] = []
+        ends: list[datetime] = []
+        for sunrise_dt in sunrise_by_day:
+            day = sunrise_dt.date()
+            start = dawn(observer, date=day, tzinfo=tz, depression=6).replace(tzinfo=None)
+            end = dusk(observer, date=day, tzinfo=tz, depression=6).replace(tzinfo=None)
+            starts.append(start)
+            ends.append(end)
+        return starts, ends

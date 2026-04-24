@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with this repository.
 
+## Deployment target
+
+FlyNow is deployed to a specific HAOS instance. **Before running any SSH/rsync/tar/ha commands, read [.planning/reference/HAOS-DEPLOYMENT.md](.planning/reference/HAOS-DEPLOYMENT.md)** — it has the host, port, SSH key path, deploy paths, and pre-configured HA services to reuse in config flow.
+
+TL;DR: `ssh -i ~/.ssh/id_ed25519_flynow -p 22 miro@192.168.68.111` (key-only, sudo NOPASSWD, port 22 not 22222, `ha` CLI does NOT work from this SSH session).
+
 ## Project Overview
 
 **FlyNow** is a Home Assistant (HAOS) integration and Lovelace card that predicts suitable flying conditions for hot air balloon operations.

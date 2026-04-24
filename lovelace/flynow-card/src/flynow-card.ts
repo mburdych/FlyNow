@@ -32,6 +32,7 @@ export class FlyNowCard extends LitElement {
     hass: { attribute: false },
   };
 
+  private _config?: Record<string, unknown>;
   private _hass?: HomeAssistantLike;
   private lastKnownAttributes?: FlyNowStatusAttributes;
   private usingStaleCache = false;
@@ -54,6 +55,17 @@ export class FlyNowCard extends LitElement {
 
   get hass(): HomeAssistantLike | undefined {
     return this._hass;
+  }
+
+  public setConfig(config: Record<string, unknown>): void {
+    if (!config || typeof config !== "object") {
+      throw new Error("Invalid configuration");
+    }
+    this._config = config;
+  }
+
+  public getCardSize(): number {
+    return 6;
   }
 
   static styles = css`
@@ -299,7 +311,8 @@ export class FlyNowCard extends LitElement {
 
   private renderConditionSection(attrs: FlyNowStatusAttributes): TemplateResult {
     const siteData = this.getSelectedSiteData(attrs);
-    const active = (siteData?.active_window?.type as WindowKey) ?? this.getLegacyActiveWindow(attrs);
+    const active =
+      (siteData?.active_window?.key as WindowKey | undefined) ?? this.getLegacyActiveWindow(attrs);
     const selectedConditions =
       (active && siteData?.windows?.[active]?.conditions) || attrs[`${active}_conditions`] || {};
     const conditions = selectedConditions as FlyNowConditionSet;
@@ -325,7 +338,7 @@ export class FlyNowCard extends LitElement {
   ): TemplateResult {
     const value = this.formatNumber(item?.value);
     const threshold = this.formatNumber(item?.threshold);
-    const pass = item?.pass ?? false;
+    const pass = item?.pass ?? item?.ok ?? false;
     return html`<div class="condition-row">
       <span>${label}</span>
       <span>${value} / ${threshold} threshold</span>
@@ -335,9 +348,24 @@ export class FlyNowCard extends LitElement {
 
   private renderLaunchWindow(attrs: FlyNowStatusAttributes): TemplateResult {
     const siteData = this.getSelectedSiteData(attrs);
-    const start = siteData?.active_window?.launch_start ?? attrs.launch_start ?? "n/a";
-    const end = siteData?.active_window?.launch_end ?? attrs.launch_end ?? "n/a";
-    return html`<div class="launch-window">Launch by ${start} to ${end}</div>`;
+    const active = siteData?.active_window;
+    const activeKey =
+      (active?.key as string | undefined) ??
+      ((active?.type as string | undefined) === "morning"
+        ? "tomorrow_morning"
+        : "tomorrow_evening");
+    const windowData = siteData?.windows?.[activeKey] ?? active;
+    const start = windowData?.launch_start ?? active?.launch_start ?? attrs.launch_start ?? "n/a";
+    const end = windowData?.launch_end ?? active?.launch_end ?? attrs.launch_end ?? "n/a";
+    const dayStart = windowData?.day_start ?? active?.day_start ?? "n/a";
+    const dayEnd = windowData?.day_end ?? active?.day_end ?? "n/a";
+    const sunrise = windowData?.sunrise ?? active?.sunrise ?? "n/a";
+    const sunset = windowData?.sunset ?? active?.sunset ?? "n/a";
+    return html`
+      <div class="launch-window">Launch by ${start} to ${end}</div>
+      <div class="launch-window">EASA day window ${dayStart} to ${dayEnd} (civil twilight)</div>
+      <div class="launch-window">Sunrise ${sunrise} · Sunset ${sunset}</div>
+    `;
   }
 
   private getLegacyActiveWindow(attrs: FlyNowStatusAttributes): WindowKey {

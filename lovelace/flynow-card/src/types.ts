@@ -4,6 +4,7 @@ export interface FlyNowConditionValue {
   value: number | null;
   threshold: number | null;
   pass: boolean;
+  ok?: boolean;
 }
 
 export interface FlyNowConditionSet {
@@ -55,8 +56,13 @@ export interface FlyNowSiteData {
 }
 
 export interface FlyNowWindowData {
+  key?: string;
   type?: string;
   go?: boolean;
+  day_start?: string | null;
+  day_end?: string | null;
+  sunrise?: string | null;
+  sunset?: string | null;
   launch_start?: string | null;
   launch_end?: string | null;
   conditions?: FlyNowConditionSet;

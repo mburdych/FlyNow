@@ -18,16 +18,18 @@ def _slovak_label(base_date: datetime, day_offset: int) -> str:
 
 def build_windows(
     now_local: datetime,
+    day_start_by_day: list[datetime],
+    day_end_by_day: list[datetime],
     sunrise_by_day: list[datetime],
     sunset_by_day: list[datetime],
     flight_duration_min: int,
     prep_time_min: int,
 ) -> list[dict]:
-    """Build 4 evening + 3 morning windows with expired-window omission."""
+    """Build 4 evening + 3 morning windows using EASA civil twilight day limits."""
     windows: list[dict] = []
     for offset in range(4):
-        sunset = sunset_by_day[offset]
-        latest_launch = sunset - timedelta(minutes=(flight_duration_min + prep_time_min))
+        day_end = day_end_by_day[offset]
+        latest_launch = day_end - timedelta(minutes=(flight_duration_min + prep_time_min))
         if now_local <= latest_launch:
             windows.append(
                 {
@@ -36,13 +38,17 @@ def build_windows(
                     "type": "evening",
                     "look_ahead": offset >= 2,
                     "night_before": offset == 1,
+                    "day_start": day_start_by_day[offset].strftime("%H:%M"),
+                    "day_end": day_end.strftime("%H:%M"),
+                    "sunrise": sunrise_by_day[offset].strftime("%H:%M"),
+                    "sunset": sunset_by_day[offset].strftime("%H:%M"),
                     "launch_start": latest_launch.strftime("%H:%M"),
                     "launch_end": (latest_launch + timedelta(minutes=30)).strftime("%H:%M"),
                 }
             )
     for offset in range(1, 4):
-        sunrise = sunrise_by_day[offset]
-        earliest_launch = sunrise + timedelta(minutes=prep_time_min)
+        day_start = day_start_by_day[offset]
+        earliest_launch = day_start + timedelta(minutes=prep_time_min)
         if now_local <= earliest_launch:
             windows.append(
                 {
@@ -51,6 +57,10 @@ def build_windows(
                     "type": "morning",
                     "look_ahead": offset >= 2,
                     "night_before": offset == 1,
+                    "day_start": day_start.strftime("%H:%M"),
+                    "day_end": day_end_by_day[offset].strftime("%H:%M"),
+                    "sunrise": sunrise_by_day[offset].strftime("%H:%M"),
+                    "sunset": sunset_by_day[offset].strftime("%H:%M"),
                     "launch_start": earliest_launch.strftime("%H:%M"),
                     "launch_end": (earliest_launch + timedelta(minutes=30)).strftime("%H:%M"),
                 }

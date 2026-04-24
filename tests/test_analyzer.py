@@ -7,7 +7,7 @@ def test_analyzer_strict_and_logic():
         "wind_speed_975hPa": [8.0, 11.0],
         "wind_speed_925hPa": [7.0, 9.0],
         "precipitation_probability": [5, 10],
-        "ceiling": [800, 600],
+        "cloud_base": [800, 600],
         "visibility": [9000, 7000],
     }
     cfg = {
@@ -20,3 +20,25 @@ def test_analyzer_strict_and_logic():
     result = analyze_window(hourly, cfg)
     assert result["go"] is False
     assert result["conditions"]["altitude_wind_ms"]["ok"] is False
+
+
+def test_analyzer_handles_none_values_without_crash():
+    hourly = {
+        "wind_speed_10m": [None, 3.5, None],
+        "wind_speed_975hPa": [None, 9.0],
+        "wind_speed_925hPa": [None, 8.5],
+        "precipitation_probability": [None, 10],
+        "cloud_base": [None, None],
+        "visibility": [None, 7000],
+    }
+    cfg = {
+        "max_surface_wind_ms": 4.0,
+        "max_altitude_wind_ms": 10.0,
+        "max_precip_prob_pct": 20.0,
+        "min_ceiling_m": 500.0,
+        "min_visibility_km": 5.0,
+    }
+
+    result = analyze_window(hourly, cfg)
+    assert result["go"] is False
+    assert result["conditions"]["ceiling_m"]["ok"] is False

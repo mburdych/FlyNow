@@ -107,8 +107,8 @@ class FlyNowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         schema = vol.Schema(
             {
                 vol.Required(CONF_SITE_NAME, default=DEFAULT_SITE_NAME): str,
-                vol.Required(CONF_LATITUDE, default=DEFAULT_LATITUDE): float,
-                vol.Required(CONF_LONGITUDE, default=DEFAULT_LONGITUDE): float,
+                vol.Required(CONF_LATITUDE, default=DEFAULT_LATITUDE): vol.Coerce(float),
+                vol.Required(CONF_LONGITUDE, default=DEFAULT_LONGITUDE): vol.Coerce(float),
             }
         )
         return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
@@ -140,11 +140,11 @@ class FlyNowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(
                     CONF_FLIGHT_DURATION_MIN, default=DEFAULT_FLIGHT_DURATION_MIN
-                ): int,
-                vol.Required(CONF_PREP_TIME_MIN, default=DEFAULT_PREP_TIME_MIN): int,
+                ): vol.Coerce(int),
+                vol.Required(CONF_PREP_TIME_MIN, default=DEFAULT_PREP_TIME_MIN): vol.Coerce(int),
                 vol.Required(
                     CONF_UPDATE_INTERVAL_MIN, default=DEFAULT_UPDATE_INTERVAL_MIN
-                ): int,
+                ): vol.Coerce(int),
             }
         )
         return self.async_show_form(
@@ -177,17 +177,17 @@ class FlyNowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(
                     CONF_MAX_SURFACE_WIND_MS, default=DEFAULT_MAX_SURFACE_WIND_MS
-                ): float,
+                ): vol.Coerce(float),
                 vol.Required(
                     CONF_MAX_ALTITUDE_WIND_MS, default=DEFAULT_MAX_ALTITUDE_WIND_MS
-                ): float,
-                vol.Required(CONF_MIN_CEILING_M, default=DEFAULT_MIN_CEILING_M): int,
+                ): vol.Coerce(float),
+                vol.Required(CONF_MIN_CEILING_M, default=DEFAULT_MIN_CEILING_M): vol.Coerce(int),
                 vol.Required(
                     CONF_MAX_PRECIP_PROB_PCT, default=DEFAULT_MAX_PRECIP_PROB_PCT
-                ): int,
+                ): vol.Coerce(int),
                 vol.Required(
                     CONF_MIN_VISIBILITY_KM, default=DEFAULT_MIN_VISIBILITY_KM
-                ): float,
+                ): vol.Coerce(float),
             }
         )
         return self.async_show_form(step_id="thresholds", data_schema=schema, errors=errors)
