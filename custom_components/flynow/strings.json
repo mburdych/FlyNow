@@ -1,5 +1,6 @@
 {
   "config": {
+    "title": "FlyNow",
     "step": {
       "user": {
         "title": "Launch location",
@@ -7,6 +8,11 @@
           "site_name": "Launch site name",
           "latitude": "Latitude",
           "longitude": "Longitude"
+        },
+        "data_description": {
+          "site_name": "Friendly name used in entities and dashboard cards.",
+          "latitude": "Launch site latitude in decimal degrees.",
+          "longitude": "Launch site longitude in decimal degrees."
         }
       },
       "flight_parameters": {
@@ -15,6 +21,11 @@
           "flight_duration_min": "Flight duration (min)",
           "prep_time_min": "Preparation time (min)",
           "update_interval_min": "Update interval (min)"
+        },
+        "data_description": {
+          "flight_duration_min": "Expected time in the air for one flight.",
+          "prep_time_min": "Buffer before takeoff used for setup and checks.",
+          "update_interval_min": "How often FlyNow refreshes forecast data."
         }
       },
       "thresholds": {
@@ -25,6 +36,13 @@
           "min_ceiling_m": "Min cloud ceiling (m)",
           "max_precip_prob_pct": "Max precipitation probability (%)",
           "min_visibility_km": "Min visibility (km)"
+        },
+        "data_description": {
+          "max_surface_wind_ms": "Maximum allowed wind near ground level.",
+          "max_altitude_wind_ms": "Maximum allowed wind in balloon operating altitude.",
+          "min_ceiling_m": "Minimum cloud base or ceiling for safe visual flight.",
+          "max_precip_prob_pct": "Maximum allowed rain probability in flight window.",
+          "min_visibility_km": "Minimum required visibility for safe operation."
         }
       },
       "notifications": {
@@ -34,6 +52,12 @@
           "pilot_notifier": "Pilot notifier entity",
           "whatsapp_notifier": "WhatsApp notifier entity",
           "calendar_entity": "Calendar entity"
+        },
+        "data_description": {
+          "crew_notifier": "Notify entity used for crew push notifications.",
+          "pilot_notifier": "Notify entity used for pilot push notifications.",
+          "whatsapp_notifier": "Notify entity routed to WhatsApp bridge.",
+          "calendar_entity": "Calendar entity where FlyNow creates GO events."
         }
       }
     },

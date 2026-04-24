@@ -1,0 +1,73 @@
+{
+  "config": {
+    "title": "FlyNow",
+    "step": {
+      "user": {
+        "title": "Miesto startu",
+        "data": {
+          "site_name": "Názov miesta štartu",
+          "latitude": "Zemepisná šírka",
+          "longitude": "Zemepisná dĺžka"
+        },
+        "data_description": {
+          "site_name": "Názov, ktorý sa zobrazí v entitách a na karte.",
+          "latitude": "Zemepisná šírka miesta štartu v desatinných stupňoch.",
+          "longitude": "Zemepisná dĺžka miesta štartu v desatinných stupňoch."
+        }
+      },
+      "flight_parameters": {
+        "title": "Parametre letu",
+        "data": {
+          "flight_duration_min": "Trvanie letu (min)",
+          "prep_time_min": "Čas prípravy (min)",
+          "update_interval_min": "Interval aktualizácie (min)"
+        },
+        "data_description": {
+          "flight_duration_min": "Predpokladané trvanie jedného letu.",
+          "prep_time_min": "Časová rezerva pred štartom na prípravu a kontrolu.",
+          "update_interval_min": "Ako často FlyNow obnovuje predpoveď počasia."
+        }
+      },
+      "thresholds": {
+        "title": "Bezpečnostné limity",
+        "data": {
+          "max_surface_wind_ms": "Maximálny vietor pri zemi (m/s)",
+          "max_altitude_wind_ms": "Maximálny vietor vo výške (m/s)",
+          "min_ceiling_m": "Minimálna výška oblačnosti (m)",
+          "max_precip_prob_pct": "Maximálna pravdepodobnosť zrážok (%)",
+          "min_visibility_km": "Minimálna dohľadnosť (km)"
+        },
+        "data_description": {
+          "max_surface_wind_ms": "Najvyššia povolená rýchlosť vetra pri povrchu.",
+          "max_altitude_wind_ms": "Najvyššia povolená rýchlosť vetra v letovej hladine balóna.",
+          "min_ceiling_m": "Minimálna potrebná výška spodnej hranice oblačnosti.",
+          "max_precip_prob_pct": "Najvyššia povolená pravdepodobnosť dažďa v letovom okne.",
+          "min_visibility_km": "Minimálna dohľadnosť potrebná na bezpečnú prevádzku."
+        }
+      },
+      "notifications": {
+        "title": "Ciele notifikácií",
+        "data": {
+          "crew_notifier": "Entita notifikácie pre crew",
+          "pilot_notifier": "Entita notifikácie pre pilota",
+          "whatsapp_notifier": "Entita notifikácie pre WhatsApp",
+          "calendar_entity": "Entita kalendára"
+        },
+        "data_description": {
+          "crew_notifier": "Notify entita pre push notifikácie crew.",
+          "pilot_notifier": "Notify entita pre push notifikácie pilota.",
+          "whatsapp_notifier": "Notify entita použitá pre WhatsApp most.",
+          "calendar_entity": "Kalendárová entita, do ktorej FlyNow vytvára GO udalosti."
+        }
+      }
+    },
+    "error": {
+      "invalid_latitude": "Zemepisná šírka musí byť medzi -90 a 90.",
+      "invalid_longitude": "Zemepisná dĺžka musí byť medzi -180 a 180.",
+      "out_of_bounds": "Hodnota je mimo podporovaného rozsahu.",
+      "single_site_only": "Fáza 1 podporuje iba jedno miesto štartu.",
+      "required": "Toto pole je povinné.",
+      "invalid_entity_id": "ID entity musí zodpovedať očakávanej doméne."
+    }
+  }
+}
