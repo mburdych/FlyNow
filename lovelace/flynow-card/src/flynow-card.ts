@@ -1,5 +1,13 @@
 import { LitElement, css, html, nothing, type TemplateResult } from "lit";
 import type {
+  BalloonId,
+  FlightOutcome,
+  ListFlightsResponse,
+  LogFlightPayload,
+  LogFlightResponse,
+  LoggedFlight,
+} from "./flight-log-types";
+import type {
   FlyNowConditionSet,
   FlyNowConditionValue,
   FlyNowSiteData,
@@ -10,6 +18,14 @@ import type {
 } from "./types";
 
 const SITE_ORDER = ["lzmada", "katarinka", "nitra-luka"] as const;
+const BALLOON_IDS: readonly BalloonId[] = ["OM-0007", "OM-0008"] as const;
+const OUTCOME_OPTIONS: ReadonlyArray<{ value: FlightOutcome; label: string }> = [
+  { value: "flown", label: "Flown" },
+  { value: "cancelled-weather", label: "Cancelled - weather" },
+  { value: "cancelled-other", label: "Cancelled - other" },
+];
+const LAST_BALLOON_KEY = "flynow.last_balloon";
+const HISTORY_LIMIT_TEXT = "Showing newest 200 entries";
 
 export class FlyNowCard extends LitElement {
   static properties = {
@@ -20,10 +36,19 @@ export class FlyNowCard extends LitElement {
   private lastKnownAttributes?: FlyNowStatusAttributes;
   private usingStaleCache = false;
   private selectedDetailSiteId?: string;
+  private flightHistory: LoggedFlight[] = [];
+  private historyLoading = false;
+  private flightSubmitState: "idle" | "saving" | "success" | "error" = "idle";
+  private submitMessage = "";
+  private logForm: LogFlightPayload = this.createDefaultLogForm();
+  private siteLockedToSelection = true;
 
   set hass(value: HomeAssistantLike | undefined) {
     const oldValue = this._hass;
     this._hass = value;
+    if (!oldValue && value) {
+      void this.refreshFlightHistory();
+    }
     this.requestUpdate("hass", oldValue);
   }
 
@@ -117,7 +142,91 @@ export class FlyNowCard extends LitElement {
       font-size: 12px;
       font-weight: 600;
     }
+    .flight-log-section {
+      border-top: 1px solid var(--divider-color);
+      padding-top: 10px;
+      display: grid;
+      gap: 10px;
+    }
+    .flight-log-form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 12px;
+    }
+    .flight-log-form label {
+      display: grid;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .flight-log-form label.notes {
+      grid-column: 1 / -1;
+    }
+    .flight-log-form input,
+    .flight-log-form select,
+    .flight-log-form textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid var(--divider-color);
+      border-radius: 8px;
+      padding: 8px;
+      font: inherit;
+      color: var(--primary-text-color);
+      background: var(--card-background-color);
+    }
+    .flight-log-form button {
+      grid-column: 1 / -1;
+      justify-self: start;
+      border: 1px solid var(--primary-color);
+      border-radius: 8px;
+      background: var(--primary-color);
+      color: var(--text-primary-color, #fff);
+      padding: 8px 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .flight-log-form button[disabled] {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .submit-status {
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .submit-status.success {
+      color: var(--success-color, var(--state-icon-active-color));
+    }
+    .submit-status.error {
+      color: var(--error-color);
+    }
+    .history-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--secondary-text-color);
+    }
+    .flight-history-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 8px;
+    }
+    .flight-history-item {
+      border: 1px solid var(--divider-color);
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 12px;
+      display: grid;
+      gap: 2px;
+    }
   `;
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    void this.refreshFlightHistory();
+  }
 
   protected render(): TemplateResult {
     const stateObj = this.hass?.states["binary_sensor.flynow_status"];
@@ -143,6 +252,7 @@ export class FlyNowCard extends LitElement {
           ${this.renderConditionSection(attrs)}
           ${this.renderLaunchWindow(attrs)}
         </div>
+        ${this.renderFlightLogSection(attrs)}
       </div>
     </ha-card>`;
   }
@@ -257,7 +367,221 @@ export class FlyNowCard extends LitElement {
 
   private selectSite(siteId: string): void {
     this.selectedDetailSiteId = siteId;
+    if (this.siteLockedToSelection) {
+      this.logForm = { ...this.logForm, site: siteId };
+    }
     this.requestUpdate();
+  }
+
+  private renderFlightLogSection(attrs: FlyNowStatusAttributes): TemplateResult {
+    const selectedSiteId = this.getSelectedSiteId(attrs);
+    if (this.siteLockedToSelection && this.logForm.site !== selectedSiteId) {
+      this.logForm = { ...this.logForm, site: selectedSiteId };
+    }
+    return html`<section class="flight-log-section">
+      <h3 class="section-title">Flight log</h3>
+      <form class="flight-log-form" @submit=${this.handleFlightSubmit}>
+        <label>
+          Date
+          <input
+            name="date"
+            type="date"
+            required
+            .value=${this.logForm.date}
+            @input=${this.handleInput}
+          />
+        </label>
+        <label>
+          Balloon
+          <select
+            name="balloon"
+            required
+            .value=${this.logForm.balloon}
+            @change=${this.handleInput}
+          >
+            ${BALLOON_IDS.map(
+              (balloon) => html`<option value=${balloon}>${balloon}</option>`
+            )}
+          </select>
+        </label>
+        <label>
+          Launch time
+          <input
+            name="launch_time"
+            type="time"
+            required
+            .value=${this.logForm.launch_time}
+            @input=${this.handleInput}
+          />
+        </label>
+        <label>
+          Duration (min)
+          <input
+            name="duration_min"
+            type="number"
+            min="15"
+            max="300"
+            required
+            .value=${String(this.logForm.duration_min)}
+            @input=${this.handleInput}
+          />
+        </label>
+        <label>
+          Site
+          <select
+            name="site"
+            required
+            .value=${this.logForm.site}
+            @change=${this.handleInput}
+          >
+            ${SITE_ORDER.map((siteId) => html`<option value=${siteId}>${this.getSiteLabel(siteId)}</option>`)}
+          </select>
+        </label>
+        <label>
+          Outcome
+          <select
+            name="outcome"
+            required
+            .value=${this.logForm.outcome}
+            @change=${this.handleInput}
+          >
+            ${OUTCOME_OPTIONS.map(
+              (option) => html`<option value=${option.value}>${option.label}</option>`
+            )}
+          </select>
+        </label>
+        <label class="notes">
+          Notes (optional)
+          <textarea
+            name="notes"
+            rows="3"
+            .value=${this.logForm.notes ?? ""}
+            @input=${this.handleInput}
+          ></textarea>
+        </label>
+        <button type="submit" ?disabled=${this.flightSubmitState === "saving"}>
+          ${this.flightSubmitState === "saving" ? "Saving..." : "Log flight"}
+        </button>
+      </form>
+      ${this.submitMessage
+        ? html`<div
+            class="submit-status ${this.flightSubmitState === "error" ? "error" : "success"}"
+          >
+            ${this.submitMessage}
+          </div>`
+        : nothing}
+      <div class="history-meta">
+        <span>Previous flights</span>
+        <span>${HISTORY_LIMIT_TEXT}</span>
+      </div>
+      ${this.historyLoading
+        ? html`<div>Loading flight history...</div>`
+        : this.renderFlightHistoryList()}
+    </section>`;
+  }
+
+  private renderFlightHistoryList(): TemplateResult {
+    if (!this.flightHistory.length) {
+      return html`<div>No flights logged yet.</div>`;
+    }
+    return html`<ul class="flight-history-list">
+      ${this.flightHistory.map(
+        (entry) => html`<li class="flight-history-item">
+          <div>${entry.date} ${entry.launch_time} - ${this.getSiteLabel(entry.site)}</div>
+          <div>${entry.balloon} - ${entry.outcome} - ${entry.duration_min} min</div>
+          ${entry.notes ? html`<div>${entry.notes}</div>` : nothing}
+        </li>`
+      )}
+    </ul>`;
+  }
+
+  private handleInput = (event: Event): void => {
+    const target = event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+    const name = target.name as keyof LogFlightPayload;
+    if (name === "duration_min") {
+      this.logForm = { ...this.logForm, duration_min: Number(target.value) || 90 };
+      return;
+    }
+    if (name === "balloon") {
+      window.localStorage?.setItem(LAST_BALLOON_KEY, target.value);
+    }
+    if (name === "site") {
+      this.siteLockedToSelection = false;
+    }
+    this.logForm = { ...this.logForm, [name]: target.value };
+  };
+
+  private handleFlightSubmit = async (event: Event): Promise<void> => {
+    event.preventDefault();
+    if (!this.hass) {
+      return;
+    }
+    this.flightSubmitState = "saving";
+    this.submitMessage = "";
+    try {
+      const response = await this.hass.callService<LogFlightResponse>(
+        "flynow",
+        "log_flight",
+        { ...this.logForm },
+        undefined,
+        false,
+        true
+      );
+      const created = response.response?.entry;
+      if (!created) {
+        throw new Error("missing response");
+      }
+      this.flightSubmitState = "success";
+      this.submitMessage = "Flight logged successfully.";
+      this.logForm = {
+        ...this.logForm,
+        launch_time: "",
+        notes: "",
+      };
+      await this.refreshFlightHistory();
+    } catch (_error) {
+      this.flightSubmitState = "error";
+      this.submitMessage = "Flight log failed. Try again.";
+    }
+  };
+
+  private async refreshFlightHistory(): Promise<void> {
+    if (!this.hass) {
+      return;
+    }
+    this.historyLoading = true;
+    try {
+      const response = await this.hass.callService<ListFlightsResponse>(
+        "flynow",
+        "list_flights",
+        {},
+        undefined,
+        false,
+        true
+      );
+      this.flightHistory = response.response?.flights ?? [];
+    } catch (_error) {
+      this.flightHistory = [];
+    } finally {
+      this.historyLoading = false;
+    }
+  }
+
+  private createDefaultLogForm(): LogFlightPayload {
+    const now = new Date();
+    const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+      now.getDate()
+    ).padStart(2, "0")}`;
+    const lastBalloon = (window.localStorage?.getItem(LAST_BALLOON_KEY) as BalloonId | null) ?? "OM-0007";
+    return {
+      date,
+      balloon: BALLOON_IDS.includes(lastBalloon) ? lastBalloon : "OM-0007",
+      launch_time: "",
+      duration_min: 90,
+      site: "lzmada",
+      outcome: "flown",
+      notes: "",
+    };
   }
 
   private getSiteLabel(siteId: string): string {

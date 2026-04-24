@@ -69,4 +69,12 @@ export interface HassEntityState {
 
 export interface HomeAssistantLike {
   states: Record<string, HassEntityState | undefined>;
+  callService<T = unknown>(
+    domain: string,
+    service: string,
+    serviceData?: Record<string, unknown>,
+    target?: Record<string, unknown>,
+    notifyOnError?: boolean,
+    returnResponse?: boolean
+  ): Promise<{ context: { id: string }; response?: T }>;
 }

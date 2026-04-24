@@ -10,7 +10,7 @@
 |---|-------|------|--------------|-------|
 | 1 | Core Integration | 3/3 | Complete    | 2026-04-22 |
 | 2 | Notifications & Card | 2/2 | Complete   | 2026-04-23 |
-| 3 | Flight Logging | Crew can record completed flights for future learning | LOG-01–02 | 1 |
+| 3 | Flight Logging | 2/2 | Complete | 2026-04-24 |
 | 4 | Multi-site forecast planning card | 1/1 | Complete | 2026-04-23 |
 
 ## Phase Details
@@ -91,7 +91,11 @@
 - LOG-02: Flight logs stored locally in HA config directory with atomic writes
 
 **Plans:**
-1. Flight log form UI and persistent JSON storage with atomic writes — enables data collection for v2 learning
+2/2 plans complete
+
+Plans:
+- [x] 03-01-PLAN.md — Flight log backend services + atomic JSON persistence
+- [x] 03-02-PLAN.md — Lovelace form + history service integration
 
 **Success Criteria** (what must be TRUE):
 1. User can fill out flight log form in card and submit without errors
@@ -130,8 +134,8 @@
 | CARD-01 | Phase 2 | Pending |
 | CARD-02 | Phase 2 | Pending |
 | CARD-03 | Phase 2 | Pending |
-| LOG-01 | Phase 3 | Pending |
-| LOG-02 | Phase 3 | Pending |
+| LOG-01 | Phase 3 | Complete |
+| LOG-02 | Phase 3 | Complete |
 | SITE-01 | Phase 4 | Complete |
 | SITE-02 | Phase 4 | Complete |
 | SITE-03 | Phase 4 | Complete |

@@ -112,3 +112,14 @@ DEFAULT_SELECTED_SITE_ID = "lzmada"
 NOTIF_DEDUP_COOLDOWN_SEC = 3600
 NOTIF_WINDOW_ID_SEP = "@"
 NOTIF_WINDOW_ID_FORMAT = "{window_key}@{launch_start}"
+
+FLIGHT_LOG_FILENAME = "flynow_flights.json"
+SERVICE_LOG_FLIGHT = "log_flight"
+SERVICE_LIST_FLIGHTS = "list_flights"
+FLIGHT_OUTCOMES: Final[tuple[str, ...]] = (
+    "flown",
+    "cancelled-weather",
+    "cancelled-other",
+)
+BALLOON_IDS: Final[tuple[str, ...]] = ("OM-0007", "OM-0008")
+FLIGHT_HISTORY_LIMIT = 200

@@ -1,0 +1,66 @@
+log_flight:
+  name: Log flight
+  description: Record a completed balloon flight in local FlyNow history.
+  fields:
+    date:
+      name: Date
+      description: Flight date in YYYY-MM-DD format.
+      required: true
+      selector:
+        date:
+    balloon:
+      name: Balloon
+      description: Balloon identifier.
+      required: true
+      selector:
+        select:
+          options:
+            - OM-0007
+            - OM-0008
+    launch_time:
+      name: Launch time
+      description: Local launch time in 24-hour format.
+      required: true
+      selector:
+        time:
+    duration_min:
+      name: Duration (minutes)
+      description: Planned flight duration.
+      required: false
+      default: 90
+      selector:
+        number:
+          min: 15
+          max: 300
+          unit_of_measurement: min
+    site:
+      name: Site
+      description: Launch site identifier.
+      required: true
+      selector:
+        select:
+          options:
+            - lzmada
+            - katarinka
+            - nitra-luka
+    outcome:
+      name: Outcome
+      description: Final flight outcome.
+      required: true
+      selector:
+        select:
+          options:
+            - flown
+            - cancelled-weather
+            - cancelled-other
+    notes:
+      name: Notes
+      description: Optional flight notes.
+      required: false
+      selector:
+        text:
+          multiline: true
+
+list_flights:
+  name: List flights
+  description: Return newest FlyNow flight records (bounded history response).

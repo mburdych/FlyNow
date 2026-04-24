@@ -53,3 +53,33 @@ def test_card_surfaces_stale_badge_when_using_cache() -> None:
     assert "showing last known values" in source
     assert "unavailable" in source
     assert "unknown" in source
+
+
+def test_card_exposes_flight_log_required_fields() -> None:
+    source = _card_text()
+    assert "Flight log" in source
+    assert "Date" in source
+    assert "Balloon" in source
+    assert "Launch time" in source
+    assert "Duration (min)" in source
+    assert "Site" in source
+    assert "Outcome" in source
+    assert "Notes (optional)" in source
+
+
+def test_card_uses_24h_time_picker_and_service_calls() -> None:
+    source = _card_text()
+    assert 'type="time"' in source
+    assert 'callService<LogFlightResponse>(' in source
+    assert '"flynow",' in source
+    assert '"log_flight"' in source
+    assert 'callService<ListFlightsResponse>(' in source
+    assert '"list_flights"' in source
+    assert "true" in source
+
+
+def test_card_renders_history_section_markers() -> None:
+    source = _card_text()
+    assert "Previous flights" in source
+    assert "Showing newest 200 entries" in source
+    assert "No flights logged yet." in source
