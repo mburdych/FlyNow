@@ -10,14 +10,18 @@ import type {
 import type {
   FlyNowConditionSet,
   FlyNowConditionValue,
+  FlyNowCorrelationSummary,
+  FlyNowImportWarning,
   LanguageCode,
   FlyNowSiteData,
   FlyNowSiteSummary,
   FlyNowStatusAttributes,
+  FlyNowTrackSummary,
   HomeAssistantLike,
   TranslationKey,
   WindowKey,
 } from "./types";
+import { FlyNowMapRenderer } from "./map-renderer";
 
 const SITE_ORDER = ["lzmada", "katarinka", "nitra-luka"] as const;
 const BALLOON_IDS: readonly BalloonId[] = ["OM-0007", "OM-0008"] as const;
@@ -152,6 +156,8 @@ export class FlyNowCard extends LitElement {
   private siteLockedToSelection = true;
   private selectedLanguage: LanguageCode = DEFAULT_LANGUAGE;
   private settingsOpen = false;
+  private mapRenderer = new FlyNowMapRenderer();
+  private mapContainer: HTMLDivElement | null = null;
 
   set hass(value: HomeAssistantLike | undefined) {
     const oldValue = this._hass;
@@ -391,11 +397,41 @@ export class FlyNowCard extends LitElement {
       display: grid;
       gap: 2px;
     }
+    .correlation-section,
+    .map-section {
+      border-top: 1px solid var(--divider-color);
+      padding-top: 8px;
+      display: grid;
+      gap: 8px;
+    }
+    .map-container {
+      min-height: 220px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
   `;
 
   connectedCallback(): void {
     super.connectedCallback();
     void this.refreshFlightHistory();
+  }
+
+  disconnectedCallback(): void {
+    this.mapRenderer.dispose();
+    this.mapContainer = null;
+    super.disconnectedCallback();
+  }
+
+  protected updated(): void {
+    const attrs = this.resolveAttributes(
+      this.hass?.states["binary_sensor.flynow_status"]?.state,
+      this.hass?.states["binary_sensor.flynow_status"]?.attributes
+    );
+    if (!this.mapContainer) {
+      return;
+    }
+    void this.mapRenderer.init(this.mapContainer);
+    void this.mapRenderer.updateTrack(attrs?.track_summary);
   }
 
   protected render(): TemplateResult {
@@ -442,6 +478,8 @@ export class FlyNowCard extends LitElement {
         <div class="selected-site-details">
           ${this.renderConditionSection(attrs)}
           ${this.renderLaunchWindow(attrs)}
+          ${this.renderCorrelationSection(attrs)}
+          ${this.renderMapSection(attrs.track_summary)}
         </div>
         ${this.renderFlightLogSection(attrs)}
       </div>
@@ -592,6 +630,44 @@ export class FlyNowCard extends LitElement {
   private getLegacyActiveWindow(attrs: FlyNowStatusAttributes): WindowKey {
     return attrs.active_window === "tomorrow_morning" ? "tomorrow_morning" : "today_evening";
   }
+
+  private renderCorrelationSection(attrs: FlyNowStatusAttributes): TemplateResult {
+    const summary: FlyNowCorrelationSummary =
+      attrs.correlation_summary ??
+      attrs.decision_snapshot ??
+      attrs.weather_snapshot ??
+      {};
+    const warnings: FlyNowImportWarning[] = attrs.import_warnings ?? [];
+    return html`<section class="correlation-section">
+      <h3 class="section-title">Forecast vs observed</h3>
+      <div>Observed source: ${summary.observed_source ?? this.t("na")}</div>
+      <div>Weather missing: ${summary.weather_missing ? "yes" : "no"}</div>
+      ${summary.weather_missing
+        ? html`<div>Reason: ${summary.weather_missing_reason ?? this.t("na")}</div>`
+        : nothing}
+      <div>Corrections: ${summary.correction_count ?? 0}</div>
+      <div>Import warnings: ${warnings.length}</div>
+    </section>`;
+  }
+
+  private renderMapSection(trackSummary: FlyNowTrackSummary | undefined): TemplateResult {
+    const pointCount = trackSummary?.point_count ?? trackSummary?.points_preview?.length ?? 0;
+    return html`<section class="map-section">
+      <h3 class="section-title">Flight track map</h3>
+      <div>Track points: ${pointCount}</div>
+      <div
+        class="map-container"
+        ${this.setMapContainer}
+      ></div>
+    </section>`;
+  }
+
+  private setMapContainer = (element: Element | undefined): void => {
+    if (!(element instanceof HTMLDivElement)) {
+      return;
+    }
+    this.mapContainer = element;
+  };
 
   private getSelectedSiteId(attrs: FlyNowStatusAttributes): string {
     if (
