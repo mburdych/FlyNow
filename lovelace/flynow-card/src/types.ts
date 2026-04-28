@@ -95,6 +95,11 @@ export interface FlyNowStatusAttributes {
   tomorrow_morning_launch_start?: string | null;
   tomorrow_morning_launch_end?: string | null;
   tomorrow_morning_conditions?: FlyNowConditionSet;
+  correlation_summary?: FlyNowCorrelationSummary;
+  decision_snapshot?: FlyNowWeatherSnapshot;
+  weather_snapshot?: FlyNowWeatherSnapshot;
+  track_summary?: FlyNowTrackSummary;
+  import_warnings?: FlyNowImportWarning[];
 }
 
 export interface FlyNowSiteSummary {
@@ -124,6 +129,48 @@ export interface FlyNowWindowData {
   launch_start?: string | null;
   launch_end?: string | null;
   conditions?: FlyNowConditionSet;
+}
+
+export interface FlyNowImportWarning {
+  code: string;
+  row?: number;
+  message?: string;
+  source?: string;
+}
+
+export interface FlyNowTrackPoint {
+  latitude: number;
+  longitude: number;
+  altitude_m?: number | null;
+  timestamp_utc?: string | null;
+}
+
+export interface FlyNowTrackSummary {
+  flight_id?: string;
+  point_count?: number;
+  start_coordinate?: { latitude: number; longitude: number } | null;
+  end_coordinate?: { latitude: number; longitude: number } | null;
+  points_preview?: FlyNowTrackPoint[];
+}
+
+export interface FlyNowWeatherSnapshotCorrection {
+  source: "metar" | "archive" | "manual" | string;
+  reason: string;
+  timestamp_utc: string;
+}
+
+export interface FlyNowWeatherSnapshot {
+  observed_source?: "metar" | "archive" | "manual" | null;
+  weather_missing?: boolean;
+  weather_missing_reason?: string | null;
+  corrections?: FlyNowWeatherSnapshotCorrection[];
+}
+
+export interface FlyNowCorrelationSummary {
+  observed_source?: "metar" | "archive" | "manual" | null;
+  weather_missing?: boolean;
+  weather_missing_reason?: string | null;
+  correction_count?: number;
 }
 
 export interface HassEntityState {
