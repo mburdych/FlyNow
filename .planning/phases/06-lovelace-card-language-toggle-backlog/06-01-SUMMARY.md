@@ -1,5 +1,5 @@
 ---
-phase: 999.1-lovelace-card-language-toggle-backlog
+phase: 06-lovelace-card-language-toggle-backlog
 plan: 01
 executed_at: "2026-04-28"
 executor: cursor
@@ -18,12 +18,12 @@ verification:
 manual_uat: pending (HAOS deploy blocked by network access)
 note: |
   Cursor bypassed /gsd-execute-phase (slash alias unavailable in its
-  PowerShell environment) and applied 999.1-01-PLAN.md directly. All
+  PowerShell environment) and applied 06-01-PLAN.md directly. All
   PLAN must_haves verified via PLAN's automated validation pipeline
   (npm build + Python regex asserts).
 ---
 
-# Phase 999.1, Plan 01 — Execution Summary
+# Phase 06, Plan 01 — Execution Summary
 
 ## What was built
 
@@ -44,7 +44,7 @@ note: |
 
 ## Outstanding
 
-- Manual UAT scenarios from `999.1-VALIDATION.md` (5 scenarios) — pending HAOS deploy.
+- Manual UAT scenarios from `06-VALIDATION.md` (5 scenarios) — pending HAOS deploy.
 - Card resource bump to `?v=20260428-3` after deploy.
 
 ## Goal-backward check

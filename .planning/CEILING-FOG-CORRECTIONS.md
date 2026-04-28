@@ -9,7 +9,7 @@
 | C2 | Card SK/EN labels | ✅ DONE | Implemented in base commit `d2f6ca9` |
 | C3 | Alias parity test | ❌ OBSOLETE | Aliases removed in C7 — no test target left |
 | C4 | Trend monotonicity | 📤 DEFERRED | Push to v1.2 fog hardening phase (nice-to-have, not user-facing bug) |
-| C5 | Pilot-tunable fog heuristic | 📤 DEFERRED → backlog 999.4 | Run `/gsd-add-backlog` when starting v1.2 milestone |
+| C5 | Pilot-tunable fog heuristic | 📤 DEFERRED → phase 09 | Run `/gsd-add-backlog` when starting v1.2 milestone |
 | C6 | Visibility series dedup | 📤 DEFERRED | Push to v1.2 (pure refactor, no behavior change) |
 | **C7** | **Drop cloud-base check entirely** | ✅ DONE | Commit `f398b3e` — entry version bumped to 2, async_migrate_entry strips `min_ceiling_m` |
 
@@ -66,11 +66,11 @@
 ### C2. Card i18n: Slovak user sees English labels
 
 **File:** [`lovelace/flynow-card/src/flynow-card.ts`](lovelace/flynow-card/src/flynow-card.ts)
-**Symptom:** `"Cloud base (m AGL)"`, `"Fog risk"`, `"Surface wind"`, `"Altitude wind"`, `"Precipitation probability"`, `"Visibility"`, `"INFO"`, `"PASS"`, `"FAIL"`, section title `"Condition thresholds"` are all hardcoded English. Backlog item 999.1 already exists for full card language toggle, but the **new ceiling/fog labels** widen the gap visibly for the SK user RIGHT NOW.
+**Symptom:** `"Cloud base (m AGL)"`, `"Fog risk"`, `"Surface wind"`, `"Altitude wind"`, `"Precipitation probability"`, `"Visibility"`, `"INFO"`, `"PASS"`, `"FAIL"`, section title `"Condition thresholds"` are all hardcoded English. Phase 06 already exists for full card language toggle, but the **new ceiling/fog labels** widen the gap visibly for the SK user RIGHT NOW.
 
 **Two acceptable options — pick one:**
 
-**Option A (minimal, ship now):** Add a tiny built-in label dictionary keyed on `hass.language` (already available on the card), no UI toggle. Covers only the new labels added by this change set. Avoids enlarging 999.1 scope.
+**Option A (minimal, ship now):** Add a tiny built-in label dictionary keyed on `hass.language` (already available on the card), no UI toggle. Covers only the new labels added by this change set. Avoids enlarging 06 scope.
 
 ```ts
 private get labels() {
@@ -90,9 +90,9 @@ private get labels() {
 ```
 Then replace all hardcoded strings via `${this.labels.cloudBase}` etc.
 
-**Option B (defer):** Explicitly add the new English labels to backlog 999.1 task list and ship as-is.
+**Option B (defer):** Explicitly add the new English labels to phase 06 task list and ship as-is.
 
-**Recommendation:** Option A — it's <30 LOC, ships consistent UX immediately, and 999.1 still owns the full toggle later.
+**Recommendation:** Option A — it's <30 LOC, ships consistent UX immediately, and 06 still owns the full toggle later.
 
 **Acceptance (Option A):**
 - HA running with `language: sk` → card shows `"Spodná hranica oblačnosti"`, `"Riziko hmly"`.
@@ -175,7 +175,7 @@ elif vis_dir == -1 or (vis_dir == 0 and spread_dir == -1):
 **Action:** Run `/gsd-add-backlog` with description:
 > Pilot-tunable fog heuristic — surface the visibility / humidity / dew-point-spread thresholds (currently hardcoded 1.0/3.0 km, 95%/90%, 1.5/2.5°C in `_fog_risk()`) into config flow so each pilot/region can calibrate. Optional: per-launch-site overrides driven by `terrain_flags` (e.g. `valley_fog_risk` from launch-sites.md raises sensitivity).
 
-This becomes 999.4. Do NOT bundle into this correction PR — it needs its own discuss-phase to figure out config UX.
+This becomes phase 09. Do NOT bundle into this correction PR — it needs its own discuss-phase to figure out config UX.
 
 ---
 
@@ -338,7 +338,7 @@ sudo grep -A20 '"flynow"' /config/.storage/core.config_entries | grep -E 'versio
 
 **Follow-up (no rush):**
 3. `refactor(analyzer): monotonic fog trend detection (C4)`.
-4. `chore(planning): backlog 999.4 fog heuristic tunability (C5)` — via `/gsd-add-backlog`.
+4. `chore(planning): phase 09 fog heuristic tunability (C5)` — via `/gsd-add-backlog`.
 5. (optional) `refactor(analyzer): dedupe visibility series parsing (C6)`.
 
 C2 already done in base. C3 obsoleted by C7 (no aliases to test).

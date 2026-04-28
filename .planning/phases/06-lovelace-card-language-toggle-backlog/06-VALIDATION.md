@@ -1,18 +1,18 @@
-# Phase 999.1 Validation Architecture
+# Phase 06 Validation Architecture
 
 ## Purpose
 
-Define Nyquist-style validation coverage for phase `999.1` so execution can prove the language-toggle goal is met with deterministic automated checks and focused manual UAT.
+Define Nyquist-style validation coverage for phase `06` so execution can prove the language-toggle goal is met with deterministic automated checks and focused manual UAT.
 
 ## Requirement Coverage Map
 
 | Requirement | Validation Signals |
 |---|---|
-| BL-999.1-01 (selector UX + placement) | Build passes, selector markup present, manual check confirms collapsible settings with explicit `SK/EN` control |
-| BL-999.1-02 (first-load detect then persist) | Source assertion for `localStorage` + `hass.language` init path, manual first-load + reload behavior |
-| BL-999.1-03 (typed SK/EN dictionary parity) | TypeScript compile/typecheck passes with strict contracts |
-| BL-999.1-04 (all card-authored labels/messages wired) | Build/typecheck pass + manual sweep of all card sections under both languages |
-| BL-999.1-05 (HA `sk`/`en` verification) | Manual HA profile language scenario checks with persistent user override validation |
+| BL-06-01 (selector UX + placement) | Build passes, selector markup present, manual check confirms collapsible settings with explicit `SK/EN` control |
+| BL-06-02 (first-load detect then persist) | Source assertion for `localStorage` + `hass.language` init path, manual first-load + reload behavior |
+| BL-06-03 (typed SK/EN dictionary parity) | TypeScript compile/typecheck passes with strict contracts |
+| BL-06-04 (all card-authored labels/messages wired) | Build/typecheck pass + manual sweep of all card sections under both languages |
+| BL-06-05 (HA `sk`/`en` verification) | Manual HA profile language scenario checks with persistent user override validation |
 
 ## Automated Validation Pipeline
 

@@ -1,4 +1,4 @@
-# Phase 999.1: Lovelace Card Language Toggle (BACKLOG) - Research
+# Phase 06: Lovelace Card Language Toggle (BACKLOG) - Research
 
 **Researched:** 2026-04-28  
 **Domain:** Home Assistant Lovelace custom card localization/state persistence  
@@ -34,7 +34,7 @@ None - discussion stayed within phase scope.
 
 The current card already uses Lit reactive rendering and has proven `localStorage` persistence (`flynow.last_balloon`), so language toggling should be implemented as a small extension of existing card state patterns rather than a new architecture. [VERIFIED: codebase `lovelace/flynow-card/src/flynow-card.ts`] Lit's reactive property model explicitly supports update-triggering state changes, which fits instant language switching in one render cycle. [CITED: https://lit.dev/docs/components/properties/]
 
-`localStorage` is the right persistence layer for this scope because settings persist across browser sessions for the same origin, matching the requirement to honor user-selected language after first load. [CITED: https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage] The implementation should use first-load detection from `hass.language` only when storage is absent/invalid, then persist and always read from storage first. [VERIFIED: `999.1-CONTEXT.md` decisions D-04..D-06]
+`localStorage` is the right persistence layer for this scope because settings persist across browser sessions for the same origin, matching the requirement to honor user-selected language after first load. [CITED: https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage] The implementation should use first-load detection from `hass.language` only when storage is absent/invalid, then persist and always read from storage first. [VERIFIED: `06-CONTEXT.md` decisions D-04..D-06]
 
 **Primary recommendation:** Add a reactive `selectedLanguage: "sk" | "en"` state in `flynow-card.ts`, initialize it via `localStorage -> hass.language fallback`, then route all UI strings through a typed `TRANSLATIONS` dictionary with English per-key fallback. [VERIFIED: codebase + context decisions]
 

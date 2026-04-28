@@ -1,12 +1,12 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: planning
-current_phase: "999.1"
-status: Phase 999.1 executed, awaiting deploy
-last_updated: "2026-04-28T13:45:00.000Z"
+milestone: v1.0
+milestone_name: milestone
+current_phase: 06 — Lovelace Card Language Toggle (executed `2bc1c8a`, awaiting HAOS deploy)
+status: unknown
+last_updated: "2026-04-28T11:52:30.958Z"
 progress:
-  total_phases: 1
+  total_phases: 4
   completed_phases: 1
   total_plans: 1
   completed_plans: 1
@@ -17,13 +17,13 @@ progress:
 
 **Project:** FlyNow
 **Created:** 2026-04-16
-**Current Phase:** 999.1 — Lovelace Card Language Toggle (executed `2bc1c8a`, awaiting HAOS deploy)
+**Current Phase:** 06 — Lovelace Card Language Toggle (executed `2bc1c8a`, awaiting HAOS deploy)
 
 ## Project Reference
 
 **Core Value:** One shared go/no-go answer that crew and pilot both receive automatically.
 
-**Current Focus:** Two unshipped commits queued for HAOS deploy: C7 cloud-base removal (`f398b3e`) + 999.1 SK/EN toggle (`2bc1c8a`). v1.2 milestone scope still informal — formalize with `/gsd-new-milestone` once additional phases (06+) are added.
+**Current Focus:** Two unshipped commits queued for HAOS deploy: C7 cloud-base removal (`f398b3e`) + 06 SK/EN toggle (`2bc1c8a`). v1.2 milestone scope still informal — formalize with `/gsd-new-milestone` once additional phases (07+) are queued.
 
 See `.planning/PROJECT.md` for living product context.
 
@@ -42,22 +42,27 @@ See `.planning/PROJECT.md` for living product context.
 ## Out-of-band committed since v1.1 (deploy pending)
 
 - `f398b3e` — `feat(flynow)!: remove cloud-base condition and migrate config entries` (C7 from CEILING-FOG-CORRECTIONS.md)
-- `2bc1c8a` — `feat(card)!: add SK/EN language toggle with persisted preference (999.1)`
+- `2bc1c8a` — `feat(card)!: add SK/EN language toggle with persisted preference (06)`
 
 Both bundled into next HAOS deploy (network access pending).
 
-## Phase 999.1 artefakty
+## Phase 06 artefakty
 
-- `.planning/phases/999.1-lovelace-card-language-toggle-backlog/999.1-CONTEXT.md`
-- `.planning/phases/999.1-lovelace-card-language-toggle-backlog/999.1-RESEARCH.md`
-- `.planning/phases/999.1-lovelace-card-language-toggle-backlog/999.1-UI-SPEC.md`
-- `.planning/phases/999.1-lovelace-card-language-toggle-backlog/999.1-DISCUSSION-LOG.md`
-- `.planning/phases/999.1-lovelace-card-language-toggle-backlog/999.1-01-PLAN.md`
-- `.planning/phases/999.1-lovelace-card-language-toggle-backlog/999.1-VALIDATION.md`
+- `.planning/phases/06-lovelace-card-language-toggle-backlog/06-CONTEXT.md`
+- `.planning/phases/06-lovelace-card-language-toggle-backlog/06-RESEARCH.md`
+- `.planning/phases/06-lovelace-card-language-toggle-backlog/06-UI-SPEC.md`
+- `.planning/phases/06-lovelace-card-language-toggle-backlog/06-DISCUSSION-LOG.md`
+- `.planning/phases/06-lovelace-card-language-toggle-backlog/06-01-PLAN.md`
+- `.planning/phases/06-lovelace-card-language-toggle-backlog/06-VALIDATION.md`
+
+## Phase 09 artefakty
+
+- `.planning/phases/09-fog-risk-hardening-trend-monotonicity-dedup-pilot-tunable-thresholds/09-CONTEXT.md`
+- `.planning/phases/09-fog-risk-hardening-trend-monotonicity-dedup-pilot-tunable-thresholds/09-DISCUSSION-LOG.md`
 
 ## Next Steps
 
 1. **Deploy** `f398b3e` + `2bc1c8a` to HAOS on home network — tar-over-SSH commands in `.planning/reference/HAOS-DEPLOYMENT.md`. After deploy, bump card resource to `?v=20260428-3` and verify config entry version=2 (migration).
-2. **Add Phase 06** to formalize v1.2 — likely candidates: promote 999.3 (time slider) or fog hardening (C4 trend monotonicity, C5 backlog 999.4 fog tunability, C6 dedup).
+2. **Run plan for backlog 09** (fog hardening bundle C4+C5+C6) and decide whether to promote it into formal v1.2 phase numbering.
 3. **Formalize v1.2 milestone** with `/gsd-new-milestone` once 2-3 phases are queued.
-4. **Extract learnings** from 999.1 via `/gsd-extract_learnings` to capture the typed-translation-dict pattern for future frontend i18n work.
+4. **Extract learnings** from 06 via `/gsd-extract_learnings` to capture the typed-translation-dict pattern for future frontend i18n work.

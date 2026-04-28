@@ -1,10 +1,10 @@
-# Phase 999.1: Lovelace Card Language Toggle (BACKLOG) - Discussion Log
+# Phase 06: Lovelace Card Language Toggle (BACKLOG) - Discussion Log
 
 > **Audit trail only.** Do not use as input to planning, research, or execution agents.
 > Decisions are captured in CONTEXT.md — this log preserves the alternatives considered.
 
 **Date:** 2026-04-28
-**Phase:** 999.1-lovelace-card-language-toggle-backlog
+**Phase:** 06-lovelace-card-language-toggle-backlog
 **Areas discussed:** Language Selector UX, Persistence Policy, Translation Architecture
 
 ---

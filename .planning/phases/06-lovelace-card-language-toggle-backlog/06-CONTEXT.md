@@ -1,4 +1,4 @@
-# Phase 999.1: Lovelace Card Language Toggle (BACKLOG) - Context
+# Phase 06: Lovelace Card Language Toggle (BACKLOG) - Context
 
 **Gathered:** 2026-04-28
 **Status:** Ready for planning
@@ -41,7 +41,7 @@ Add a user-facing language switch to the FlyNow Lovelace card so users can expli
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Backlog Scope
-- `.planning/ROADMAP.md` — Phase `999.1` goal and task checklist for language toggle behavior.
+- `.planning/ROADMAP.md` — Phase `06` goal and task checklist for language toggle behavior.
 
 ### Product Constraints
 - `.planning/PROJECT.md` — current value and requirement context for shipped card behavior expectations.
@@ -91,5 +91,5 @@ None - discussion stayed within phase scope.
 
 ---
 
-*Phase: 999.1-lovelace-card-language-toggle-backlog*
+*Phase: 06-lovelace-card-language-toggle-backlog*
 *Context gathered: 2026-04-28*
