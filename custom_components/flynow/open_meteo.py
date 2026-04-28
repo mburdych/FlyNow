@@ -14,13 +14,9 @@ HOURLY_FIELDS = [
     "wind_speed_925hPa",
     "precipitation_probability",
     "visibility",
-    "cloud_cover",
     "relative_humidity_2m",
     "temperature_2m",
     "dew_point_2m",
-    # Open-Meteo does not support `ceiling` in hourly requests.
-    # `cloud_base` provides cloud layer height in meters and is a usable proxy.
-    "cloud_base",
 ]
 
 

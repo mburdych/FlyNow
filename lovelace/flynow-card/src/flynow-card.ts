@@ -322,7 +322,6 @@ export class FlyNowCard extends LitElement {
     const conditions = selectedConditions as FlyNowConditionSet;
     const surfaceWind = conditions.surface_wind ?? conditions.surface_wind_ms;
     const altitudeWind = conditions.altitude_wind ?? conditions.altitude_wind_ms;
-    const cloudBase = conditions.cloud_base_min_m ?? conditions.ceiling ?? conditions.ceiling_m;
     const precipitation =
       conditions.precipitation_probability ?? conditions.precip_prob;
     const visibility = conditions.visibility ?? conditions.visibility_km;
@@ -332,7 +331,6 @@ export class FlyNowCard extends LitElement {
       <h3 class="section-title">${labels.section}</h3>
       ${this.renderConditionRow(labels.surfaceWind, surfaceWind)}
       ${this.renderConditionRow(labels.altitudeWind, altitudeWind)}
-      ${this.renderConditionRow(labels.cloudBase, cloudBase)}
       ${this.renderConditionRow(labels.precipitation, precipitation)}
       ${this.renderConditionRow(labels.visibility, visibility)}
       ${this.renderFogRiskRow(fogRisk)}
@@ -688,7 +686,6 @@ export class FlyNowCard extends LitElement {
     const isSk = (this.hass?.language ?? "en").toLowerCase().startsWith("sk");
     if (isSk) {
       return {
-        cloudBase: "Spodná hranica oblačnosti (m AGL)",
         fogRisk: "Riziko hmly",
         section: "Podmienky",
         surfaceWind: "Vietor pri zemi",
@@ -703,7 +700,6 @@ export class FlyNowCard extends LitElement {
       };
     }
     return {
-      cloudBase: "Cloud base (m AGL)",
       fogRisk: "Fog risk",
       section: "Condition thresholds",
       surfaceWind: "Surface wind",

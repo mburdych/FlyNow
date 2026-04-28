@@ -7,6 +7,7 @@ from typing import Any
 import voluptuous as vol
 
 from .const import (
+    CONFIG_VERSION,
     CONF_CALENDAR_ENTITY,
     CONF_CREW_NOTIFIER,
     CONF_FLIGHT_DURATION_MIN,
@@ -15,7 +16,6 @@ from .const import (
     CONF_MAX_ALTITUDE_WIND_MS,
     CONF_MAX_PRECIP_PROB_PCT,
     CONF_MAX_SURFACE_WIND_MS,
-    CONF_MIN_CEILING_M,
     CONF_MIN_VISIBILITY_KM,
     CONF_PILOT_NOTIFIER,
     CONF_PREP_TIME_MIN,
@@ -30,7 +30,6 @@ from .const import (
     DEFAULT_MAX_ALTITUDE_WIND_MS,
     DEFAULT_MAX_PRECIP_PROB_PCT,
     DEFAULT_MAX_SURFACE_WIND_MS,
-    DEFAULT_MIN_CEILING_M,
     DEFAULT_MIN_VISIBILITY_KM,
     DEFAULT_PILOT_NOTIFIER,
     DEFAULT_PREP_TIME_MIN,
@@ -39,7 +38,6 @@ from .const import (
     DEFAULT_WHATSAPP_NOTIFIER,
     DOMAIN,
     MAX_ALTITUDE_WIND_MS,
-    MAX_CEILING_M,
     MAX_FLIGHT_DURATION_MIN,
     MAX_PRECIP_PROB_PCT,
     MAX_PREP_TIME_MIN,
@@ -47,7 +45,6 @@ from .const import (
     MAX_UPDATE_INTERVAL_MIN,
     MAX_VISIBILITY_KM,
     MIN_ALTITUDE_WIND_MS,
-    MIN_CEILING_M,
     MIN_FLIGHT_DURATION_MIN,
     MIN_PRECIP_PROB_PCT,
     MIN_PREP_TIME_MIN,
@@ -89,7 +86,7 @@ def _is_entity_in_domain(entity_id: str, domain: str) -> bool:
 class FlyNowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """3-step one-site configuration flow."""
 
-    VERSION = 1
+    VERSION = CONFIG_VERSION
 
     def __init__(self) -> None:
         self._data: dict[str, Any] = {}
@@ -157,7 +154,6 @@ class FlyNowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             checks = [
                 (CONF_MAX_SURFACE_WIND_MS, MIN_SURFACE_WIND_MS, MAX_SURFACE_WIND_MS),
                 (CONF_MAX_ALTITUDE_WIND_MS, MIN_ALTITUDE_WIND_MS, MAX_ALTITUDE_WIND_MS),
-                (CONF_MIN_CEILING_M, MIN_CEILING_M, MAX_CEILING_M),
                 (CONF_MAX_PRECIP_PROB_PCT, MIN_PRECIP_PROB_PCT, MAX_PRECIP_PROB_PCT),
                 (CONF_MIN_VISIBILITY_KM, MIN_VISIBILITY_KM, MAX_VISIBILITY_KM),
             ]
@@ -181,7 +177,6 @@ class FlyNowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(
                     CONF_MAX_ALTITUDE_WIND_MS, default=DEFAULT_MAX_ALTITUDE_WIND_MS
                 ): vol.Coerce(float),
-                vol.Required(CONF_MIN_CEILING_M, default=DEFAULT_MIN_CEILING_M): vol.Coerce(int),
                 vol.Required(
                     CONF_MAX_PRECIP_PROB_PCT, default=DEFAULT_MAX_PRECIP_PROB_PCT
                 ): vol.Coerce(int),

@@ -20,7 +20,6 @@ from .const import (
     CONF_MAX_PRECIP_PROB_PCT,
     CONF_PILOT_NOTIFIER,
     CONF_MAX_SURFACE_WIND_MS,
-    CONF_MIN_CEILING_M,
     CONF_MIN_VISIBILITY_KM,
     CONF_SITE_NAME,
     CONF_PREP_TIME_MIN,
@@ -79,7 +78,6 @@ class FlyNowCoordinator(DataUpdateCoordinator):
             "max_surface_wind_ms": float(self._config[CONF_MAX_SURFACE_WIND_MS]),
             "max_altitude_wind_ms": float(self._config[CONF_MAX_ALTITUDE_WIND_MS]),
             "max_precip_prob_pct": float(self._config[CONF_MAX_PRECIP_PROB_PCT]),
-            "min_ceiling_m": float(self._config[CONF_MIN_CEILING_M]),
             "min_visibility_km": float(self._config[CONF_MIN_VISIBILITY_KM]),
         }
         selected_site_id = str(

@@ -57,13 +57,6 @@ def _safe_min(values: list[Any] | None, default: float = 0.0) -> float:
     return min(cleaned)
 
 
-def _min_or_none(values: list[Any] | None) -> float | None:
-    cleaned = _clean_numeric(values)
-    if not cleaned:
-        return None
-    return min(cleaned)
-
-
 def _max_or_none(values: list[Any] | None) -> float | None:
     cleaned = _clean_numeric(values)
     if not cleaned:
@@ -116,33 +109,6 @@ def _fog_risk(hourly_slice: dict[str, list[Any]]) -> dict[str, Any]:
     }
 
 
-def _cloud_base_metric(hourly_slice: dict[str, list[Any]], min_ceiling_m: float) -> dict[str, Any]:
-    cloud_base_min = _min_or_none(hourly_slice.get("cloud_base") or hourly_slice.get("ceiling"))
-    cloud_cover_max = _max_or_none(hourly_slice.get("cloud_cover"))
-    if cloud_base_min is not None:
-        return _metric(
-            cloud_base_min,
-            min_ceiling_m,
-            "min",
-            reason="measured_cloud_base",
-        )
-    if cloud_cover_max is not None and cloud_cover_max < 35:
-        return _metric(
-            None,
-            min_ceiling_m,
-            "min",
-            ok_override=True,
-            reason="clear_or_few_clouds_no_cloud_base",
-        )
-    return _metric(
-        None,
-        min_ceiling_m,
-        "min",
-        ok_override=False,
-        reason="cloud_base_missing_under_cloudy_conditions",
-    )
-
-
 def analyze_window(hourly_slice: dict[str, list[Any]], config: dict[str, float]) -> dict[str, Any]:
     """Analyze one window using worst-case values over the full duration."""
     surface_wind = _safe_max(hourly_slice.get("wind_speed_10m"))
@@ -152,16 +118,11 @@ def analyze_window(hourly_slice: dict[str, list[Any]], config: dict[str, float])
     )
     precip_prob = _safe_max(hourly_slice.get("precipitation_probability"))
     visibility_km = _safe_min(hourly_slice.get("visibility"), default=0.0) / 1000.0
-    cloud_base = _cloud_base_metric(hourly_slice, float(config["min_ceiling_m"]))
 
     checks = {
         "surface_wind_ms": _metric(surface_wind, config["max_surface_wind_ms"], "max"),
         "altitude_wind_ms": _metric(altitude_wind, config["max_altitude_wind_ms"], "max"),
         "precip_prob": _metric(precip_prob, config["max_precip_prob_pct"], "max"),
-        "cloud_base_min_m": cloud_base,
-        # Temporary aliases for backward compatibility with existing payload consumers.
-        "ceiling_m": {**cloud_base},
-        "ceiling": {**cloud_base},
         "visibility_km": _metric(visibility_km, config["min_visibility_km"], "min"),
         "fog_risk": _fog_risk(hourly_slice),
     }

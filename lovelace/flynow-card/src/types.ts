@@ -18,9 +18,6 @@ export interface FlyNowConditionSet {
   surface_wind_ms?: FlyNowConditionValue;
   altitude_wind?: FlyNowConditionValue;
   altitude_wind_ms?: FlyNowConditionValue;
-  cloud_base_min_m?: FlyNowConditionValue;
-  ceiling?: FlyNowConditionValue;
-  ceiling_m?: FlyNowConditionValue;
   precipitation_probability?: FlyNowConditionValue;
   precip_prob?: FlyNowConditionValue;
   visibility?: FlyNowConditionValue;

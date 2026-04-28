@@ -4,9 +4,17 @@ from __future__ import annotations
 
 from typing import Any
 
-from .const import COORDINATOR_DATA, DOMAIN, PLATFORMS
+from .const import CONFIG_VERSION, COORDINATOR_DATA, DOMAIN, PLATFORMS
 from .coordinator import FlyNowCoordinator
 from .flight_log import async_register_services
+
+
+async def async_migrate_entry(hass: Any, entry: Any) -> bool:
+    if entry.version >= CONFIG_VERSION:
+        return True
+    new_data = {k: v for k, v in entry.data.items() if k != "min_ceiling_m"}
+    hass.config_entries.async_update_entry(entry, data=new_data, version=CONFIG_VERSION)
+    return True
 
 
 async def async_setup_entry(hass: Any, entry: Any) -> bool:

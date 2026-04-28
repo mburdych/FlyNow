@@ -76,7 +76,6 @@ async def test_coordinator_dispatches_notifications_on_go_transition(monkeypatch
         "max_surface_wind_ms": 4.0,
         "max_altitude_wind_ms": 10.0,
         "max_precip_prob_pct": 20,
-        "min_ceiling_m": 500,
         "min_visibility_km": 5.0,
         "crew_notifier": "notify.crew_phone",
         "pilot_notifier": "notify.pilot_phone",
@@ -147,7 +146,6 @@ async def test_coordinator_returns_three_site_projection(monkeypatch) -> None:
         "max_surface_wind_ms": 4.0,
         "max_altitude_wind_ms": 10.0,
         "max_precip_prob_pct": 20,
-        "min_ceiling_m": 500,
         "min_visibility_km": 5.0,
         "site_name": "Legacy Site",
     }
@@ -215,7 +213,6 @@ async def test_coordinator_respects_explicit_selected_site(monkeypatch) -> None:
         "max_surface_wind_ms": 4.0,
         "max_altitude_wind_ms": 10.0,
         "max_precip_prob_pct": 20,
-        "min_ceiling_m": 500,
         "min_visibility_km": 5.0,
         "site_name": "Legacy Site",
         "selected_site_id": "nitra-luka",
