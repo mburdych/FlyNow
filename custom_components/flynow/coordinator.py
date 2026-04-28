@@ -32,6 +32,7 @@ from .const import (
 )
 from .notifications import dispatch_go_transition_notifications
 from .open_meteo import OpenMeteoError, fetch_forecast
+from .weather_snapshot import freeze_forecast_snapshot
 from .windows import build_windows
 
 try:
@@ -168,6 +169,15 @@ class FlyNowCoordinator(DataUpdateCoordinator):
                 now_utc=now_utc,
             )
         self._previous_windows = result_windows
+        decision_snapshot = freeze_forecast_snapshot(
+            flight_id=f"decision-{selected_site_id}",
+            forecast_summary={
+                "selected_site_id": selected_site_id,
+                "active_window": active or {},
+                "data_last_updated_utc": now_utc.isoformat(),
+            },
+            frozen_at=now_utc,
+        )
         return {
             "active_window": active,
             "windows": result_windows,
@@ -177,6 +187,7 @@ class FlyNowCoordinator(DataUpdateCoordinator):
             "selected_site_id": selected_site_id,
             "sites": sites,
             "sites_summary": sites_summary,
+            "decision_snapshot": decision_snapshot,
         }
 
     def _easa_day_boundaries(

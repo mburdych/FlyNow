@@ -28,6 +28,7 @@ from .const import (
 )
 from .flight_import import parse_import_payload
 from .flight_sidecar_store import FlightSidecarStore
+from .weather_snapshot import freeze_forecast_snapshot, resolve_observed_weather
 
 try:
     from homeassistant.core import SupportsResponse
@@ -207,14 +208,33 @@ async def async_register_services(hass: Any) -> None:
                 "warnings": normalized["warnings"],
             }
         )
+        snapshot = freeze_forecast_snapshot(
+            flight_id=flight_id,
+            forecast_summary={"captured_via": "import_fallback"},
+        )
+
+        async def _empty_provider() -> dict[str, Any] | None:
+            return None
+
+        observed = await resolve_observed_weather(
+            metar_provider=_empty_provider,
+            archive_provider=_empty_provider,
+            manual_entry=None,
+        )
+        snapshot["observed"] = observed["observed"]
+        snapshot["observed_source"] = observed["observed_source"]
+        snapshot["weather_missing"] = observed["weather_missing"]
+        snapshot["weather_missing_reason"] = observed["weather_missing_reason"]
+
         return {
             "flight_id": flight_id,
             "schema_version": sidecar_record["schema_version"],
             "imported_point_count": sidecar_record["summary"]["point_count"],
             "warnings": normalized["warnings"],
             "sidecar_linked": True,
-            "weather_missing": True,
-            "weather_missing_reason": "snapshot_not_captured_yet",
+            "weather_missing": snapshot["weather_missing"],
+            "weather_missing_reason": snapshot["weather_missing_reason"],
+            "weather_snapshot": snapshot,
         }
 
     hass.services.async_register(
