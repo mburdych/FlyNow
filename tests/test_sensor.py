@@ -8,6 +8,12 @@ class _Coordinator:
             "windows": {"today_evening": {"go": True, "launch_start": "18:00", "launch_end": "18:30", "conditions": {}}},
             "data_last_updated_utc": "2026-04-22T10:00:00+00:00",
             "notification_result": {"reason": "sent"},
+            "decision_snapshot": {
+                "observed_source": None,
+                "weather_missing": False,
+                "weather_missing_reason": None,
+                "corrections": [],
+            },
             "selected_site_id": "lzmada",
             "sites_summary": {
                 "lzmada": {"go": True},
@@ -26,6 +32,7 @@ def test_sensor_projects_state():
     assert attrs["data_last_updated_utc"] == "2026-04-22T10:00:00+00:00"
     assert attrs["selected_site_id"] == "lzmada"
     assert set(attrs["sites_summary"]) == {"lzmada", "katarinka", "nitra-luka"}
+    assert attrs["correlation_summary"]["weather_missing"] is False
 
 
 def test_sensor_projects_legacy_keys_from_selected_site_payload() -> None:

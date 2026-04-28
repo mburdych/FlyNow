@@ -55,6 +55,7 @@ class FlyNowStatusSensor(CoordinatorEntity, BinarySensorEntity):
             "selected_site_id": selected_site_id,
             "sites_summary": data.get("sites_summary", {}),
             "sites": data.get("sites", {}),
+            "correlation_summary": self._build_correlation_summary(data),
         }
         if active:
             attrs["active_window"] = active.get("type", "none")
@@ -66,3 +67,13 @@ class FlyNowStatusSensor(CoordinatorEntity, BinarySensorEntity):
             attrs[f"{key}_launch_end"] = item.get("launch_end")
             attrs[f"{key}_conditions"] = item.get("conditions", {})
         return attrs
+
+    def _build_correlation_summary(self, data: dict[str, Any]) -> dict[str, Any]:
+        snapshot = data.get("decision_snapshot") or data.get("weather_snapshot") or {}
+        corrections = snapshot.get("corrections", [])
+        return {
+            "observed_source": snapshot.get("observed_source"),
+            "weather_missing": bool(snapshot.get("weather_missing")),
+            "weather_missing_reason": snapshot.get("weather_missing_reason"),
+            "correction_count": len(corrections) if isinstance(corrections, list) else 0,
+        }
