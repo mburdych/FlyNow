@@ -1,10 +1,19 @@
 # Ceiling + Fog — Correction Plan
 
-**Source:** Code review of Cursor's ceiling+fog implementation (commit pending, files modified: `analyzer.py`, `open_meteo.py`, `strings.json`, `sk.json`, `flynow-card.ts`, `types.ts`, `test_analyzer.py`).
+**Source:** Code review of Cursor's ceiling+fog implementation (commit `d2f6ca9`, deployed to HAOS 2026-04-28). C7 follow-up shipped in `f398b3e` 2026-04-28.
 
-**Goal:** Close the gaps surfaced in review before this work is shipped. Coordinator wiring is already clean (verified — `analyze_window()` output flows through `**` spread in [`coordinator.py:121-124`](custom_components/flynow/coordinator.py#L121-L124), no whitelist).
+**Status — CLOSED 2026-04-28:**
+| ID | Title | Status | Resolution |
+|---|---|---|---|
+| C1 | Fog row warn-state CSS | ✅ DONE | Implemented in base commit `d2f6ca9` (Cursor included risk-aware classes upfront — review missed it) |
+| C2 | Card SK/EN labels | ✅ DONE | Implemented in base commit `d2f6ca9` |
+| C3 | Alias parity test | ❌ OBSOLETE | Aliases removed in C7 — no test target left |
+| C4 | Trend monotonicity | 📤 DEFERRED | Push to v1.2 fog hardening phase (nice-to-have, not user-facing bug) |
+| C5 | Pilot-tunable fog heuristic | 📤 DEFERRED → backlog 999.4 | Run `/gsd-add-backlog` when starting v1.2 milestone |
+| C6 | Visibility series dedup | 📤 DEFERRED | Push to v1.2 (pure refactor, no behavior change) |
+| **C7** | **Drop cloud-base check entirely** | ✅ DONE | Commit `f398b3e` — entry version bumped to 2, async_migrate_entry strips `min_ceiling_m` |
 
-**How to run:** Open this file in Cursor, then `/gsd-quick` or `/gsd-plan-phase` (depending on whether you want full PLAN ceremony). Tasks are ordered by priority — MUST FIX first, then NICE TO HAVE.
+**Outcome:** Document closed. Code in master `f398b3e`. Deploy pending (HAOS network access). C4-C6 carried forward to v1.2 milestone planning.
 
 ---
 
@@ -179,24 +188,160 @@ This becomes 999.4. Do NOT bundle into this correction PR — it needs its own d
 
 ---
 
-## ❌ Out of scope for this correction PR
+## 🔴 C7. Drop cloud-base check entirely (added 2026-04-28)
 
-- **Config key rename** `min_ceiling_m` → `min_cloud_base_m`. Would break existing `config_entries`. Do as a separate migration phase in v1.2 if at all (Cursor's choice to keep the legacy key was correct).
-- **Wind shear analysis.** Mentioned in original plan but never implemented. Track as separate phase.
-- **Fog as GO/NO-GO blocker.** Original plan said "additive first" — keep `blocking=False`. Promotion to blocker is a v2 decision.
+**Decision:** User dropped cloud-base from the product. No card row, no GO/NO-GO contribution, no API field, no config option. Existing `config_entries` get migrated to remove orphan `min_ceiling_m`. **Aliases are removed (no `ceiling`/`ceiling_m` in payload).** This obsoletes C3.
+
+### C7.1 — `custom_components/flynow/const.py`
+
+Remove these lines:
+```py
+CONF_MIN_CEILING_M = "min_ceiling_m"
+DEFAULT_MIN_CEILING_M = 500
+MIN_CEILING_M = 100
+MAX_CEILING_M = 5000
+```
+Add (right next to `DOMAIN`):
+```py
+CONFIG_VERSION = 2  # bump on cloud-base removal; triggers async_migrate_entry
+```
+
+### C7.2 — `custom_components/flynow/manifest.json`
+
+No changes (manifest version is integration version, separate from config entry version).
+
+### C7.3 — `custom_components/flynow/__init__.py`
+
+Add migration before `async_setup_entry`:
+```py
+from .const import CONFIG_VERSION
+
+async def async_migrate_entry(hass: Any, entry: Any) -> bool:
+    if entry.version >= CONFIG_VERSION:
+        return True
+    new_data = {k: v for k, v in entry.data.items() if k != "min_ceiling_m"}
+    hass.config_entries.async_update_entry(entry, data=new_data, version=CONFIG_VERSION)
+    return True
+```
+Update `async_setup_entry` first line:
+```py
+async def async_setup_entry(hass: Any, entry: Any) -> bool:
+    # entry.version is now CONFIG_VERSION after migration
+    hass.data.setdefault(DOMAIN, {})
+    ...
+```
+Note: also need to set `version=CONFIG_VERSION` in the ConfigFlow class (see C7.4).
+
+### C7.4 — `custom_components/flynow/config_flow.py`
+
+1. Remove all `CONF_MIN_CEILING_M`, `DEFAULT_MIN_CEILING_M`, `MIN_CEILING_M`, `MAX_CEILING_M` imports.
+2. Remove the `min_ceiling_m` line from `(checks = [...]` validator block (around line 160).
+3. Remove the `vol.Required(CONF_MIN_CEILING_M, default=DEFAULT_MIN_CEILING_M): vol.Coerce(int),` line from the schema (around line 184).
+4. Add to the ConfigFlow class:
+   ```py
+   from .const import CONFIG_VERSION
+
+   class FlyNowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+       VERSION = CONFIG_VERSION
+   ```
+   (find the existing class declaration and add `VERSION = CONFIG_VERSION` as the first class attribute.)
+
+### C7.5 — `custom_components/flynow/coordinator.py`
+
+1. Remove `CONF_MIN_CEILING_M` from imports (line ~23).
+2. Remove this line from the `thresholds` dict (~line 82):
+   ```py
+   "min_ceiling_m": float(self._config[CONF_MIN_CEILING_M]),
+   ```
+
+### C7.6 — `custom_components/flynow/analyzer.py`
+
+1. Delete the entire `_cloud_base_metric()` function (~lines 142-165).
+2. In `analyze_window()`, remove these lines:
+   ```py
+   cloud_base = _cloud_base_metric(hourly_slice, float(config["min_ceiling_m"]))
+   ...
+   "cloud_base_min_m": cloud_base,
+   "ceiling_m": {**cloud_base},
+   "ceiling": {**cloud_base},
+   ```
+3. Final `checks` dict should contain only: `surface_wind_ms`, `altitude_wind_ms`, `precip_prob`, `visibility_km`, `fog_risk`.
+
+### C7.7 — `custom_components/flynow/open_meteo.py`
+
+Remove from `HOURLY_FIELDS`:
+```py
+"cloud_cover",
+"cloud_base",
+```
+Plus the comment block about `ceiling`. Keep `relative_humidity_2m`, `temperature_2m`, `dew_point_2m` (used by fog).
+
+### C7.8 — `custom_components/flynow/strings.json` + `translations/sk.json`
+
+In both files, remove the `min_ceiling_m` keys from BOTH the `data` and `data_description` blocks under the thresholds step.
+
+### C7.9 — `lovelace/flynow-card/src/types.ts`
+
+Remove from `FlyNowConditionSet`:
+```ts
+cloud_base_min_m?: FlyNowConditionValue;
+ceiling?: FlyNowConditionValue;
+ceiling_m?: FlyNowConditionValue;
+```
+
+### C7.10 — `lovelace/flynow-card/src/flynow-card.ts`
+
+In `renderConditions()`:
+1. Remove the `cloudBase` const declaration.
+2. Remove the `${this.renderConditionRow("Cloud base (m AGL)", cloudBase)}` line (in SK dictionary the key/usage too).
+3. If the SK label dictionary has `cloudBase` entry, remove from both `en` and `sk` dicts.
+
+### C7.11 — `tests/test_analyzer.py`
+
+1. Delete entirely: `test_analyzer_does_not_fail_cloud_base_when_clear_sky_and_missing_cloud_base`.
+2. In `test_analyzer_strict_and_logic`: remove asserts referencing `cloud_base_min_m`, `ceiling_m`, `ceiling`. Remove `min_ceiling_m` from the `cfg` dict.
+3. In `test_analyzer_handles_none_values_without_crash`: remove the `cloud_base_min_m` asserts and the `min_ceiling_m` from `cfg`.
+4. In `test_analyzer_reports_fog_risk_metadata`: remove `min_ceiling_m` from `cfg`, remove `cloud_base` and `cloud_cover` from `hourly`.
+
+### C7.12 — Acceptance
+
+After deploy + restart:
+- Card shows 5 condition rows (was 6): Surface wind, Altitude wind, Precipitation, Visibility, Fog risk.
+- Config flow "thresholds" step has 4 fields (was 5).
+- HA log: clean restart, no `KeyError: 'min_ceiling_m'` from existing entries (migration handles it).
+- `pytest tests/` green.
+- ruff + mypy clean.
+
+### C7.13 — Verify migration worked on HAOS
+
+After deploy, in Web Terminal:
+```bash
+sudo grep -A20 '"flynow"' /config/.storage/core.config_entries | grep -E 'version|min_ceiling_m'
+# Expect: "version": 2  AND  no min_ceiling_m line
+```
 
 ---
 
-## Suggested commit sequence
+## ❌ Out of scope for this correction PR
 
-1. `fix(card): risk-aware fog row badge (C1)` — small, isolated, easy to review.
-2. `feat(card): minimal SK/EN label dictionary for new ceiling+fog rows (C2)` — option A.
-3. `test(analyzer): assert ceiling alias parity (C3)` — guards future regressions.
-4. `refactor(analyzer): monotonic fog trend detection (C4)` — only if you want it now.
-5. `chore(planning): backlog 999.4 fog heuristic tunability (C5)` — via `/gsd-add-backlog`.
-6. (optional) `refactor(analyzer): dedupe visibility series parsing (C6)`.
+- **Wind shear analysis.** Mentioned in original plan but never implemented. Track as separate phase.
+- **Fog as GO/NO-GO blocker.** Original plan said "additive first" — keep `blocking=False`. Promotion to blocker is a v2 decision.
+- ~~Config key rename `min_ceiling_m` → `min_cloud_base_m`~~ — moot, key removed entirely (C7).
 
-Each commit independently testable. C1+C2+C3 = minimum ship. C4-C6 = polish.
+---
+
+## Suggested commit sequence (revised after C7)
+
+**Ship batch (C1 + C7) — recommended single deploy:**
+1. `feat(flynow)!: drop cloud-base check from product (C7)` — breaking config schema, includes migration. Bump entry version to 2.
+2. `fix(card): risk-aware fog row badge (C1)` — keeps red HIGH visible.
+
+**Follow-up (no rush):**
+3. `refactor(analyzer): monotonic fog trend detection (C4)`.
+4. `chore(planning): backlog 999.4 fog heuristic tunability (C5)` — via `/gsd-add-backlog`.
+5. (optional) `refactor(analyzer): dedupe visibility series parsing (C6)`.
+
+C2 already done in base. C3 obsoleted by C7 (no aliases to test).
 
 ---
 

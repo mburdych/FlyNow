@@ -28,9 +28,9 @@ One shared go/no-go answer that the crew and pilot both receive automatically.
 
 ### Active
 
-- [ ] Ceiling/cloud-base reliability hardening for low-quality forecast scenarios
 - [ ] Structured UAT checklist with screenshot baselines
 - [ ] v2 learning loop from historical flights (LEARN-01..02)
+- [ ] Fog risk hardening (trend monotonicity, pilot-tunable thresholds) — carried over from CEILING-FOG-CORRECTIONS.md C4-C6
 
 ### Out of Scope
 
