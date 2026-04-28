@@ -10,6 +10,7 @@ import voluptuous as vol
 
 from custom_components.flynow.const import (
     FLIGHT_HISTORY_LIMIT,
+    SERVICE_IMPORT_FLIGHT,
     SERVICE_LIST_FLIGHTS,
     SERVICE_LOG_FLIGHT,
 )
@@ -162,3 +163,33 @@ async def test_malformed_file_is_backed_up_and_recovered(tmp_path: Path) -> None
     await hass.services.call("flynow", SERVICE_LOG_FLIGHT, _payload())
     repaired = json.loads((tmp_path / "flynow_flights.json").read_text(encoding="utf-8"))
     assert len(repaired) == 1
+
+
+@pytest.mark.anyio
+async def test_import_flight_service_returns_uuid_linkage_and_warnings(tmp_path: Path) -> None:
+    hass = _Hass(tmp_path)
+    await async_register_services(hass)
+
+    imported = await hass.services.call(
+        "flynow",
+        SERVICE_IMPORT_FLIGHT,
+        {
+            "format": "csv",
+            "source_name": "mixed.csv",
+            "raw_payload": (
+                "timestamp,latitude,longitude,altitude_m\n"
+                "2026-04-24T05:00:00Z,48.1429,17.3776,130\n"
+                "2026-04-24T05:15:00Z,bad-value,17.3900,160\n"
+                "2026-04-24T05:30:00+00:00,48.1800,17.4100,220\n"
+            ),
+        },
+    )
+
+    assert imported["flight_id"]
+    assert imported["sidecar_linked"] is True
+    assert imported["imported_point_count"] == 2
+    assert len(imported["warnings"]) == 1
+    assert imported["warnings"][0]["code"] == "invalid_point"
+
+    listed = await hass.services.call("flynow", SERVICE_LIST_FLIGHTS, {})
+    assert listed["flights"] == []
