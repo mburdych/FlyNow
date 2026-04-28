@@ -33,14 +33,14 @@
         "data": {
           "max_surface_wind_ms": "Max surface wind (m/s)",
           "max_altitude_wind_ms": "Max altitude wind (m/s)",
-          "min_ceiling_m": "Min cloud ceiling (m)",
+          "min_ceiling_m": "Min cloud base (m AGL)",
           "max_precip_prob_pct": "Max precipitation probability (%)",
           "min_visibility_km": "Min visibility (km)"
         },
         "data_description": {
           "max_surface_wind_ms": "Maximum allowed wind near ground level.",
           "max_altitude_wind_ms": "Maximum allowed wind in balloon operating altitude.",
-          "min_ceiling_m": "Minimum cloud base or ceiling for safe visual flight.",
+          "min_ceiling_m": "Minimum cloud-base height above ground (AGL) used as a safety limit.",
           "max_precip_prob_pct": "Maximum allowed rain probability in flight window.",
           "min_visibility_km": "Minimum required visibility for safe operation."
         }

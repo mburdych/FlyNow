@@ -137,6 +137,10 @@ export class FlyNowCard extends LitElement {
       color: var(--error-color);
       font-weight: 600;
     }
+    .result-warn {
+      color: var(--warning-color, #e6a700);
+      font-weight: 600;
+    }
     .launch-window {
       font-size: 13px;
     }
@@ -318,17 +322,20 @@ export class FlyNowCard extends LitElement {
     const conditions = selectedConditions as FlyNowConditionSet;
     const surfaceWind = conditions.surface_wind ?? conditions.surface_wind_ms;
     const altitudeWind = conditions.altitude_wind ?? conditions.altitude_wind_ms;
-    const ceiling = conditions.ceiling ?? conditions.ceiling_m;
+    const cloudBase = conditions.cloud_base_min_m ?? conditions.ceiling ?? conditions.ceiling_m;
     const precipitation =
       conditions.precipitation_probability ?? conditions.precip_prob;
     const visibility = conditions.visibility ?? conditions.visibility_km;
+    const fogRisk = conditions.fog_risk;
+    const labels = this.labels;
     return html`<section>
-      <h3 class="section-title">Condition thresholds</h3>
-      ${this.renderConditionRow("Surface wind", surfaceWind)}
-      ${this.renderConditionRow("Altitude wind", altitudeWind)}
-      ${this.renderConditionRow("Ceiling", ceiling)}
-      ${this.renderConditionRow("Precipitation probability", precipitation)}
-      ${this.renderConditionRow("Visibility", visibility)}
+      <h3 class="section-title">${labels.section}</h3>
+      ${this.renderConditionRow(labels.surfaceWind, surfaceWind)}
+      ${this.renderConditionRow(labels.altitudeWind, altitudeWind)}
+      ${this.renderConditionRow(labels.cloudBase, cloudBase)}
+      ${this.renderConditionRow(labels.precipitation, precipitation)}
+      ${this.renderConditionRow(labels.visibility, visibility)}
+      ${this.renderFogRiskRow(fogRisk)}
     </section>`;
   }
 
@@ -336,14 +343,55 @@ export class FlyNowCard extends LitElement {
     label: string,
     item: FlyNowConditionValue | undefined
   ): TemplateResult {
-    const value = this.formatNumber(item?.value);
-    const threshold = this.formatNumber(item?.threshold);
+    const value = this.formatValue(item?.value);
+    const threshold = this.formatValue(item?.threshold);
     const pass = item?.pass ?? item?.ok ?? false;
+    const thresholdText =
+      item?.threshold === null || item?.threshold === undefined
+        ? value
+        : `${value} / ${threshold} threshold`;
     return html`<div class="condition-row">
       <span>${label}</span>
-      <span>${value} / ${threshold} threshold</span>
-      <span class="${pass ? "result-pass" : "result-fail"}">${pass ? "PASS" : "FAIL"}</span>
+      <span>${thresholdText}</span>
+      <span class="${pass ? "result-pass" : "result-fail"}">${pass ? this.labels.pass : this.labels.fail}</span>
     </div>`;
+  }
+
+  private renderFogRiskRow(item: FlyNowConditionValue | undefined): TemplateResult {
+    if (!item) {
+      return html``;
+    }
+    const risk = this.formatValue(item.value).toUpperCase();
+    const trend = item.trend ? ` (${item.trend})` : "";
+    const riskClass = this.fogRiskClass(item.value);
+    const badge = this.fogRiskBadge(item.value);
+    return html`<div class="condition-row">
+      <span>${this.labels.fogRisk}</span>
+      <span>${risk}${trend}</span>
+      <span class="${riskClass}">${badge}</span>
+    </div>`;
+  }
+
+  private fogRiskClass(value: number | string | null | undefined): string {
+    switch (value) {
+      case "high":
+        return "result-fail";
+      case "medium":
+      case "low-medium":
+        return "result-warn";
+      default:
+        return "result-pass";
+    }
+  }
+
+  private fogRiskBadge(value: number | string | null | undefined): string {
+    if (value === "high") {
+      return this.labels.risk;
+    }
+    if (value === "low") {
+      return this.labels.ok;
+    }
+    return this.labels.info;
   }
 
   private renderLaunchWindow(attrs: FlyNowStatusAttributes): TemplateResult {
@@ -624,5 +672,49 @@ export class FlyNowCard extends LitElement {
       return "n/a";
     }
     return `${value}`;
+  }
+
+  private formatValue(value: number | string | null | undefined): string {
+    if (typeof value === "number") {
+      return this.formatNumber(value);
+    }
+    if (value === null || value === undefined || value === "") {
+      return "n/a";
+    }
+    return `${value}`;
+  }
+
+  private get labels(): Record<string, string> {
+    const isSk = (this.hass?.language ?? "en").toLowerCase().startsWith("sk");
+    if (isSk) {
+      return {
+        cloudBase: "Spodná hranica oblačnosti (m AGL)",
+        fogRisk: "Riziko hmly",
+        section: "Podmienky",
+        surfaceWind: "Vietor pri zemi",
+        altitudeWind: "Vietor vo výške",
+        precipitation: "Pravdepodobnosť zrážok",
+        visibility: "Dohľadnosť",
+        pass: "OK",
+        fail: "ZLE",
+        info: "INFO",
+        risk: "RIZIKO",
+        ok: "OK",
+      };
+    }
+    return {
+      cloudBase: "Cloud base (m AGL)",
+      fogRisk: "Fog risk",
+      section: "Condition thresholds",
+      surfaceWind: "Surface wind",
+      altitudeWind: "Altitude wind",
+      precipitation: "Precipitation probability",
+      visibility: "Visibility",
+      pass: "PASS",
+      fail: "FAIL",
+      info: "INFO",
+      risk: "RISK",
+      ok: "OK",
+    };
   }
 }

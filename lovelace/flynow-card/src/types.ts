@@ -1,10 +1,16 @@
 export type WindowKey = "today_evening" | "tomorrow_morning";
 
 export interface FlyNowConditionValue {
-  value: number | null;
-  threshold: number | null;
+  value: number | string | null;
+  threshold: number | string | null;
   pass: boolean;
   ok?: boolean;
+  blocking?: boolean;
+  reason?: string;
+  trend?: string;
+  min_visibility_km?: number | null;
+  max_relative_humidity_pct?: number | null;
+  min_temp_dew_spread_c?: number | null;
 }
 
 export interface FlyNowConditionSet {
@@ -12,12 +18,14 @@ export interface FlyNowConditionSet {
   surface_wind_ms?: FlyNowConditionValue;
   altitude_wind?: FlyNowConditionValue;
   altitude_wind_ms?: FlyNowConditionValue;
+  cloud_base_min_m?: FlyNowConditionValue;
   ceiling?: FlyNowConditionValue;
   ceiling_m?: FlyNowConditionValue;
   precipitation_probability?: FlyNowConditionValue;
   precip_prob?: FlyNowConditionValue;
   visibility?: FlyNowConditionValue;
   visibility_km?: FlyNowConditionValue;
+  fog_risk?: FlyNowConditionValue;
 }
 
 export interface FlyNowStatusAttributes {
@@ -75,6 +83,7 @@ export interface HassEntityState {
 
 export interface HomeAssistantLike {
   states: Record<string, HassEntityState | undefined>;
+  language?: string;
   callService<T = unknown>(
     domain: string,
     service: string,

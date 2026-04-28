@@ -33,14 +33,14 @@
         "data": {
           "max_surface_wind_ms": "Maximálny vietor pri zemi (m/s)",
           "max_altitude_wind_ms": "Maximálny vietor vo výške (m/s)",
-          "min_ceiling_m": "Minimálna výška oblačnosti (m)",
+          "min_ceiling_m": "Minimálna spodná hranica oblačnosti (m nad zemou)",
           "max_precip_prob_pct": "Maximálna pravdepodobnosť zrážok (%)",
           "min_visibility_km": "Minimálna dohľadnosť (km)"
         },
         "data_description": {
           "max_surface_wind_ms": "Najvyššia povolená rýchlosť vetra pri povrchu.",
           "max_altitude_wind_ms": "Najvyššia povolená rýchlosť vetra v letovej hladine balóna.",
-          "min_ceiling_m": "Minimálna potrebná výška spodnej hranice oblačnosti.",
+          "min_ceiling_m": "Minimálna výška spodnej hranice oblačnosti nad zemou (AGL) pre bezpečný let.",
           "max_precip_prob_pct": "Najvyššia povolená pravdepodobnosť dažďa v letovom okne.",
           "min_visibility_km": "Minimálna dohľadnosť potrebná na bezpečnú prevádzku."
         }
