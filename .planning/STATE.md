@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 06 — Lovelace Card Language Toggle (executed `2bc1c8a`, awaiting HAOS deploy)
 status: unknown
-last_updated: "2026-04-28T11:52:30.958Z"
+last_updated: "2026-04-28T12:35:00.356Z"
 progress:
   total_phases: 4
   completed_phases: 1
