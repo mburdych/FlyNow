@@ -10,26 +10,133 @@ import type {
 import type {
   FlyNowConditionSet,
   FlyNowConditionValue,
+  LanguageCode,
   FlyNowSiteData,
   FlyNowSiteSummary,
   FlyNowStatusAttributes,
   HomeAssistantLike,
+  TranslationKey,
   WindowKey,
 } from "./types";
 
 const SITE_ORDER = ["lzmada", "katarinka", "nitra-luka"] as const;
 const BALLOON_IDS: readonly BalloonId[] = ["OM-0007", "OM-0008"] as const;
-const OUTCOME_OPTIONS: ReadonlyArray<{ value: FlightOutcome; label: string }> = [
-  { value: "flown", label: "Flown" },
-  { value: "cancelled-weather", label: "Cancelled - weather" },
-  { value: "cancelled-other", label: "Cancelled - other" },
-];
 const LAST_BALLOON_KEY = "flynow.last_balloon";
-const HISTORY_LIMIT_TEXT = "Showing newest 200 entries";
+const LANGUAGE_KEY = "flynow.card.language";
+const DEFAULT_LANGUAGE: LanguageCode = "en";
+
+const TRANSLATIONS: Record<LanguageCode, Record<TranslationKey, string>> = {
+  en: {
+    unavailable: "FlyNow card unavailable.",
+    staleData: "Data temporarily unavailable - showing last known values",
+    settings: "Settings",
+    showSettings: "Show settings",
+    hideSettings: "Hide settings",
+    language: "Language",
+    switchLanguage: "Switch language",
+    go: "GO",
+    noGo: "NO-GO",
+    na: "n/a",
+    to: "to",
+    section: "Condition thresholds",
+    surfaceWind: "Surface wind",
+    altitudeWind: "Altitude wind",
+    precipitation: "Precipitation probability",
+    visibility: "Visibility",
+    threshold: "threshold",
+    pass: "PASS",
+    fail: "FAIL",
+    info: "INFO",
+    risk: "RISK",
+    ok: "OK",
+    fogRisk: "Fog risk",
+    launchBy: "Launch by",
+    easaDayWindow: "EASA day window",
+    civilTwilight: "civil twilight",
+    sunrise: "Sunrise",
+    sunset: "Sunset",
+    flightLog: "Flight log",
+    date: "Date",
+    balloon: "Balloon",
+    launchTime: "Launch time",
+    durationMin: "Duration (min)",
+    site: "Site",
+    outcome: "Outcome",
+    notesOptional: "Notes (optional)",
+    saving: "Saving...",
+    logFlight: "Log flight",
+    flightLoggedSuccessfully: "Flight logged successfully.",
+    flightLogFailed: "Flight log failed. Try again.",
+    previousFlights: "Previous flights",
+    historyLimitText: "Showing newest 200 entries",
+    loadingFlightHistory: "Loading flight history...",
+    noFlightsLogged: "No flights logged yet.",
+    outcomeFlown: "Flown",
+    outcomeCancelledWeather: "Cancelled - weather",
+    outcomeCancelledOther: "Cancelled - other",
+    siteLzmada: "LZMADA - Maly Madaras",
+    siteKatarinka: "Luka pri Katarinke",
+    siteNitraLuka: "Luka pri Nitre",
+  },
+  sk: {
+    unavailable: "Karta FlyNow nie je dostupna.",
+    staleData: "Data su docasne nedostupne - zobrazujem posledne zname hodnoty",
+    settings: "Nastavenia",
+    showSettings: "Zobrazit nastavenia",
+    hideSettings: "Skryt nastavenia",
+    language: "Jazyk",
+    switchLanguage: "Prepnut jazyk",
+    go: "GO",
+    noGo: "NO-GO",
+    na: "n/a",
+    to: "do",
+    section: "Limity podmienok",
+    surfaceWind: "Vietor pri zemi",
+    altitudeWind: "Vietor vo vyske",
+    precipitation: "Pravdepodobnost zrazok",
+    visibility: "Dohladnost",
+    threshold: "limit",
+    pass: "OK",
+    fail: "ZLE",
+    info: "INFO",
+    risk: "RIZIKO",
+    ok: "OK",
+    fogRisk: "Riziko hmly",
+    launchBy: "Start medzi",
+    easaDayWindow: "EASA denny interval",
+    civilTwilight: "obciansky sumrak",
+    sunrise: "Vychod slnka",
+    sunset: "Zapad slnka",
+    flightLog: "Letovy zaznam",
+    date: "Datum",
+    balloon: "Balon",
+    launchTime: "Cas startu",
+    durationMin: "Dlzka (min)",
+    site: "Lokalita",
+    outcome: "Vysledok",
+    notesOptional: "Poznamky (volitelne)",
+    saving: "Ukladam...",
+    logFlight: "Ulozit let",
+    flightLoggedSuccessfully: "Let bol uspesne ulozeny.",
+    flightLogFailed: "Ulozenie letu zlyhalo. Skuste to znova.",
+    previousFlights: "Predchadzajuce lety",
+    historyLimitText: "Zobrazenych najnovsich 200 zaznamov",
+    loadingFlightHistory: "Nacitavam historiu letov...",
+    noFlightsLogged: "Zatial nie su evidovane ziadne lety.",
+    outcomeFlown: "Odletene",
+    outcomeCancelledWeather: "Zrusene - pocasie",
+    outcomeCancelledOther: "Zrusene - ine",
+    siteLzmada: "LZMADA - Maly Madaras",
+    siteKatarinka: "Luka pri Katarinke",
+    siteNitraLuka: "Luka pri Nitre",
+  },
+};
 
 export class FlyNowCard extends LitElement {
   static properties = {
     hass: { attribute: false },
+    selectedLanguage: { state: true },
+    settingsOpen: { state: true },
   };
 
   private _config?: Record<string, unknown>;
@@ -43,11 +150,14 @@ export class FlyNowCard extends LitElement {
   private submitMessage = "";
   private logForm: LogFlightPayload = this.createDefaultLogForm();
   private siteLockedToSelection = true;
+  private selectedLanguage: LanguageCode = DEFAULT_LANGUAGE;
+  private settingsOpen = false;
 
   set hass(value: HomeAssistantLike | undefined) {
     const oldValue = this._hass;
     this._hass = value;
     if (!oldValue && value) {
+      this.ensureLanguageInitialized();
       void this.refreshFlightHistory();
     }
     this.requestUpdate("hass", oldValue);
@@ -89,6 +199,50 @@ export class FlyNowCard extends LitElement {
       background: var(--card-background-color);
       text-align: left;
       cursor: pointer;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .settings-toggle {
+      border: 1px solid var(--divider-color);
+      border-radius: 8px;
+      background: var(--card-background-color);
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .settings-panel {
+      display: grid;
+      gap: 6px;
+      border: 1px solid var(--divider-color);
+      border-radius: 10px;
+      padding: 8px;
+      background: var(--secondary-background-color, rgba(127, 127, 127, 0.12));
+    }
+    .settings-label {
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .lang-segments {
+      display: inline-flex;
+      gap: 4px;
+    }
+    .lang-segment {
+      min-height: 44px;
+      min-width: 52px;
+      border: 1px solid var(--divider-color);
+      border-radius: 8px;
+      background: var(--card-background-color);
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .lang-segment.active {
+      border-color: var(--primary-color);
+      background: var(--primary-color);
+      color: var(--text-primary-color, #fff);
     }
     .site-name {
       margin: 0;
@@ -250,15 +404,36 @@ export class FlyNowCard extends LitElement {
 
     if (!attrs) {
       return html`<ha-card>
-        <div class="card-content">FlyNow card unavailable.</div>
+        <div class="card-content">${this.t("unavailable")}</div>
       </ha-card>`;
     }
 
     return html`<ha-card>
       <div class="card-content">
+        <div class="card-header">
+          <h3 class="section-title">FlyNow</h3>
+          <button
+            type="button"
+            class="settings-toggle"
+            @click=${this.toggleSettingsPanel}
+            title=${this.settingsOpen ? this.t("hideSettings") : this.t("showSettings")}
+            aria-expanded=${this.settingsOpen ? "true" : "false"}
+          >
+            ${this.t("settings")} ${this.settingsOpen ? "▾" : "▸"}
+          </button>
+        </div>
+        ${this.settingsOpen
+          ? html`<div class="settings-panel">
+              <div class="settings-label">${this.t("switchLanguage")}</div>
+              <div class="lang-segments" role="group" aria-label=${this.t("language")}>
+                ${this.renderLanguageButton("sk", "SK")}
+                ${this.renderLanguageButton("en", "EN")}
+              </div>
+            </div>`
+          : nothing}
         ${this.usingStaleCache
           ? html`<div class="stale-badge">
-              Data temporarily unavailable - showing last known values
+              ${this.t("staleData")}
             </div>`
           : nothing}
         <div class="sites-summary">
@@ -306,9 +481,9 @@ export class FlyNowCard extends LitElement {
       @click=${() => this.selectSite(siteId)}
     >
       <p class="site-name">${this.getSiteLabel(siteId)}</p>
-      <span class="status-chip ${go ? "go" : "no-go"}">${go ? "GO" : "NO-GO"}</span>
+      <span class="status-chip ${go ? "go" : "no-go"}">${go ? this.t("go") : this.t("noGo")}</span>
       <div class="launch-window">
-        ${summary.launch_start ?? "n/a"} to ${summary.launch_end ?? "n/a"}
+        ${summary.launch_start ?? this.t("na")} ${this.t("to")} ${summary.launch_end ?? this.t("na")}
       </div>
     </button>`;
   }
@@ -347,7 +522,7 @@ export class FlyNowCard extends LitElement {
     const thresholdText =
       item?.threshold === null || item?.threshold === undefined
         ? value
-        : `${value} / ${threshold} threshold`;
+        : `${value} / ${threshold} ${this.t("threshold")}`;
     return html`<div class="condition-row">
       <span>${label}</span>
       <span>${thresholdText}</span>
@@ -401,16 +576,16 @@ export class FlyNowCard extends LitElement {
         ? "tomorrow_morning"
         : "tomorrow_evening");
     const windowData = siteData?.windows?.[activeKey] ?? active;
-    const start = windowData?.launch_start ?? active?.launch_start ?? attrs.launch_start ?? "n/a";
-    const end = windowData?.launch_end ?? active?.launch_end ?? attrs.launch_end ?? "n/a";
-    const dayStart = windowData?.day_start ?? active?.day_start ?? "n/a";
-    const dayEnd = windowData?.day_end ?? active?.day_end ?? "n/a";
-    const sunrise = windowData?.sunrise ?? active?.sunrise ?? "n/a";
-    const sunset = windowData?.sunset ?? active?.sunset ?? "n/a";
+    const start = windowData?.launch_start ?? active?.launch_start ?? attrs.launch_start ?? this.t("na");
+    const end = windowData?.launch_end ?? active?.launch_end ?? attrs.launch_end ?? this.t("na");
+    const dayStart = windowData?.day_start ?? active?.day_start ?? this.t("na");
+    const dayEnd = windowData?.day_end ?? active?.day_end ?? this.t("na");
+    const sunrise = windowData?.sunrise ?? active?.sunrise ?? this.t("na");
+    const sunset = windowData?.sunset ?? active?.sunset ?? this.t("na");
     return html`
-      <div class="launch-window">Launch by ${start} to ${end}</div>
-      <div class="launch-window">EASA day window ${dayStart} to ${dayEnd} (civil twilight)</div>
-      <div class="launch-window">Sunrise ${sunrise} · Sunset ${sunset}</div>
+      <div class="launch-window">${this.t("launchBy")} ${start} ${this.t("to")} ${end}</div>
+      <div class="launch-window">${this.t("easaDayWindow")} ${dayStart} ${this.t("to")} ${dayEnd} (${this.t("civilTwilight")})</div>
+      <div class="launch-window">${this.t("sunrise")} ${sunrise} · ${this.t("sunset")} ${sunset}</div>
     `;
   }
 
@@ -453,10 +628,10 @@ export class FlyNowCard extends LitElement {
       this.logForm = { ...this.logForm, site: selectedSiteId };
     }
     return html`<section class="flight-log-section">
-      <h3 class="section-title">Flight log</h3>
+      <h3 class="section-title">${this.t("flightLog")}</h3>
       <form class="flight-log-form" @submit=${this.handleFlightSubmit}>
         <label>
-          Date
+          ${this.t("date")}
           <input
             name="date"
             type="date"
@@ -466,7 +641,7 @@ export class FlyNowCard extends LitElement {
           />
         </label>
         <label>
-          Balloon
+          ${this.t("balloon")}
           <select
             name="balloon"
             required
@@ -479,7 +654,7 @@ export class FlyNowCard extends LitElement {
           </select>
         </label>
         <label>
-          Launch time
+          ${this.t("launchTime")}
           <input
             name="launch_time"
             type="time"
@@ -489,7 +664,7 @@ export class FlyNowCard extends LitElement {
           />
         </label>
         <label>
-          Duration (min)
+          ${this.t("durationMin")}
           <input
             name="duration_min"
             type="number"
@@ -501,7 +676,7 @@ export class FlyNowCard extends LitElement {
           />
         </label>
         <label>
-          Site
+          ${this.t("site")}
           <select
             name="site"
             required
@@ -512,20 +687,20 @@ export class FlyNowCard extends LitElement {
           </select>
         </label>
         <label>
-          Outcome
+          ${this.t("outcome")}
           <select
             name="outcome"
             required
             .value=${this.logForm.outcome}
             @change=${this.handleInput}
           >
-            ${OUTCOME_OPTIONS.map(
+            ${this.getOutcomeOptions().map(
               (option) => html`<option value=${option.value}>${option.label}</option>`
             )}
           </select>
         </label>
         <label class="notes">
-          Notes (optional)
+          ${this.t("notesOptional")}
           <textarea
             name="notes"
             rows="3"
@@ -534,7 +709,7 @@ export class FlyNowCard extends LitElement {
           ></textarea>
         </label>
         <button type="submit" ?disabled=${this.flightSubmitState === "saving"}>
-          ${this.flightSubmitState === "saving" ? "Saving..." : "Log flight"}
+          ${this.flightSubmitState === "saving" ? this.t("saving") : this.t("logFlight")}
         </button>
       </form>
       ${this.submitMessage
@@ -545,18 +720,18 @@ export class FlyNowCard extends LitElement {
           </div>`
         : nothing}
       <div class="history-meta">
-        <span>Previous flights</span>
-        <span>${HISTORY_LIMIT_TEXT}</span>
+        <span>${this.t("previousFlights")}</span>
+        <span>${this.t("historyLimitText")}</span>
       </div>
       ${this.historyLoading
-        ? html`<div>Loading flight history...</div>`
+        ? html`<div>${this.t("loadingFlightHistory")}</div>`
         : this.renderFlightHistoryList()}
     </section>`;
   }
 
   private renderFlightHistoryList(): TemplateResult {
     if (!this.flightHistory.length) {
-      return html`<div>No flights logged yet.</div>`;
+      return html`<div>${this.t("noFlightsLogged")}</div>`;
     }
     return html`<ul class="flight-history-list">
       ${this.flightHistory.map(
@@ -606,7 +781,7 @@ export class FlyNowCard extends LitElement {
         throw new Error("missing response");
       }
       this.flightSubmitState = "success";
-      this.submitMessage = "Flight logged successfully.";
+      this.submitMessage = this.t("flightLoggedSuccessfully");
       this.logForm = {
         ...this.logForm,
         launch_time: "",
@@ -615,7 +790,7 @@ export class FlyNowCard extends LitElement {
       await this.refreshFlightHistory();
     } catch (_error) {
       this.flightSubmitState = "error";
-      this.submitMessage = "Flight log failed. Try again.";
+      this.submitMessage = this.t("flightLogFailed");
     }
   };
 
@@ -659,15 +834,15 @@ export class FlyNowCard extends LitElement {
   }
 
   private getSiteLabel(siteId: string): string {
-    if (siteId === "lzmada") return "LZMADA — Malý Madaras";
-    if (siteId === "katarinka") return "Lúka pri Katarínke";
-    if (siteId === "nitra-luka") return "Lúka pri Nitre";
+    if (siteId === "lzmada") return this.t("siteLzmada");
+    if (siteId === "katarinka") return this.t("siteKatarinka");
+    if (siteId === "nitra-luka") return this.t("siteNitraLuka");
     return siteId;
   }
 
   private formatNumber(value: number | null | undefined): string {
     if (value === null || value === undefined || Number.isNaN(value)) {
-      return "n/a";
+      return this.t("na");
     }
     return `${value}`;
   }
@@ -677,40 +852,101 @@ export class FlyNowCard extends LitElement {
       return this.formatNumber(value);
     }
     if (value === null || value === undefined || value === "") {
-      return "n/a";
+      return this.t("na");
     }
     return `${value}`;
   }
 
   private get labels(): Record<string, string> {
-    const isSk = (this.hass?.language ?? "en").toLowerCase().startsWith("sk");
-    if (isSk) {
-      return {
-        fogRisk: "Riziko hmly",
-        section: "Podmienky",
-        surfaceWind: "Vietor pri zemi",
-        altitudeWind: "Vietor vo výške",
-        precipitation: "Pravdepodobnosť zrážok",
-        visibility: "Dohľadnosť",
-        pass: "OK",
-        fail: "ZLE",
-        info: "INFO",
-        risk: "RIZIKO",
-        ok: "OK",
-      };
-    }
     return {
-      fogRisk: "Fog risk",
-      section: "Condition thresholds",
-      surfaceWind: "Surface wind",
-      altitudeWind: "Altitude wind",
-      precipitation: "Precipitation probability",
-      visibility: "Visibility",
-      pass: "PASS",
-      fail: "FAIL",
-      info: "INFO",
-      risk: "RISK",
-      ok: "OK",
+      fogRisk: this.t("fogRisk"),
+      section: this.t("section"),
+      surfaceWind: this.t("surfaceWind"),
+      altitudeWind: this.t("altitudeWind"),
+      precipitation: this.t("precipitation"),
+      visibility: this.t("visibility"),
+      pass: this.t("pass"),
+      fail: this.t("fail"),
+      info: this.t("info"),
+      risk: this.t("risk"),
+      ok: this.t("ok"),
     };
+  }
+
+  private getOutcomeOptions(): ReadonlyArray<{ value: FlightOutcome; label: string }> {
+    return [
+      { value: "flown", label: this.t("outcomeFlown") },
+      { value: "cancelled-weather", label: this.t("outcomeCancelledWeather") },
+      { value: "cancelled-other", label: this.t("outcomeCancelledOther") },
+    ];
+  }
+
+  private toggleSettingsPanel = (): void => {
+    this.settingsOpen = !this.settingsOpen;
+  };
+
+  private renderLanguageButton(language: LanguageCode, label: string): TemplateResult {
+    const active = this.selectedLanguage === language;
+    return html`<button
+      type="button"
+      class="lang-segment ${active ? "active" : ""}"
+      @click=${() => this.setLanguage(language)}
+      @keydown=${(event: KeyboardEvent) => this.handleLanguageButtonKeydown(event, language)}
+      aria-pressed=${active ? "true" : "false"}
+    >
+      ${label}
+    </button>`;
+  }
+
+  private handleLanguageButtonKeydown(event: KeyboardEvent, language: LanguageCode): void {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      this.setLanguage(language);
+    }
+  }
+
+  private setLanguage(language: LanguageCode): void {
+    if (this.selectedLanguage === language) {
+      return;
+    }
+    this.selectedLanguage = language;
+    this.persistLanguage(language);
+  }
+
+  private ensureLanguageInitialized(): void {
+    const stored = this.readStoredLanguage();
+    if (stored) {
+      this.selectedLanguage = stored;
+      return;
+    }
+    const inferred = this.inferLanguageFromHass();
+    this.selectedLanguage = inferred;
+    this.persistLanguage(inferred);
+  }
+
+  private readStoredLanguage(): LanguageCode | undefined {
+    const raw = window.localStorage?.getItem(LANGUAGE_KEY);
+    if (!raw) {
+      return undefined;
+    }
+    if (raw === "sk" || raw === "en") {
+      return raw;
+    }
+    const inferred = this.inferLanguageFromHass();
+    this.persistLanguage(inferred);
+    return inferred;
+  }
+
+  private inferLanguageFromHass(): LanguageCode {
+    const candidate = (this.hass?.language ?? DEFAULT_LANGUAGE).toLowerCase();
+    return candidate.startsWith("sk") ? "sk" : "en";
+  }
+
+  private persistLanguage(language: LanguageCode): void {
+    window.localStorage?.setItem(LANGUAGE_KEY, language);
+  }
+
+  private t(key: TranslationKey): string {
+    return TRANSLATIONS[this.selectedLanguage]?.[key] ?? TRANSLATIONS.en[key];
   }
 }
