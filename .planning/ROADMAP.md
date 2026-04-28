@@ -48,3 +48,17 @@ Run `/gsd-new-milestone` to define v1.2 scope and requirements.
 - [ ] Choose map stack (HA-friendly: static image, embedded map lib, or external link) and privacy constraints
 - [ ] Prototype import flow and map rendering in the card or a dedicated panel
 - [ ] Document backup/migration implications for larger track payloads and richer per-flight weather blobs
+
+### Phase 999.3: Card Time Slider — Scrub Forecast Across Launch Sites (BACKLOG)
+
+**Goal:** Add a horizontal time slider to the FlyNow Lovelace card. Dragging the handle from left to right advances the forecast time within the morning window, and all per-launch-site condition values (wind, cloud_base, fog risk, GO/NO-GO) update live to reflect that time. Lets the crew preview how conditions evolve hour-by-hour without waiting for the next coordinator update.
+**Source:** User request
+**Deferred at:** 2026-04-28
+**Tasks:**
+- [ ] Define slider range (e.g. full forecast horizon vs. only morning window) and step granularity (hourly vs. finer)
+- [ ] Decide how the selected time interacts with the existing GO/NO-GO display (override current "now" view vs. side-by-side preview)
+- [ ] Ensure coordinator payload exposes the full hourly per-site series the slider needs (not just aggregated window summary)
+- [ ] Update card types and rendering in `lovelace/flynow-card/` to drive all per-site rows from the slider's selected timestamp
+- [ ] Visual treatment: time label, snap-to-hour, keyboard accessibility, mobile touch behavior
+- [ ] Reset behavior when new coordinator data arrives (preserve user's selection vs. snap back to "now")
+- [ ] Verify with multiple sites that values change consistently and no stale row remains
