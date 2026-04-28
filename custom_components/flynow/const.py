@@ -111,8 +111,10 @@ NOTIF_WINDOW_ID_SEP = "@"
 NOTIF_WINDOW_ID_FORMAT = "{window_key}@{launch_start}"
 
 FLIGHT_LOG_FILENAME = "flynow_flights.json"
+FLIGHT_SIDECAR_FILENAME = "flynow_flight_sidecar.json"
 SERVICE_LOG_FLIGHT = "log_flight"
 SERVICE_LIST_FLIGHTS = "list_flights"
+SERVICE_IMPORT_FLIGHT = "import_flight"
 FLIGHT_OUTCOMES: Final[tuple[str, ...]] = (
     "flown",
     "cancelled-weather",
@@ -120,3 +122,5 @@ FLIGHT_OUTCOMES: Final[tuple[str, ...]] = (
 )
 BALLOON_IDS: Final[tuple[str, ...]] = ("OM-0007", "OM-0008")
 FLIGHT_HISTORY_LIMIT = 200
+IMPORT_MAX_FILE_SIZE_BYTES = 2_000_000
+IMPORT_MAX_POINTS = 10_000
