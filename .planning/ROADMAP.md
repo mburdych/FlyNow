@@ -10,44 +10,33 @@
 
 ## Current Milestone
 
-No active milestone is currently in progress.
+**v1.2** — in progress (informal). Phases 06 and 07 executed locally, awaiting HAOS deploy. 08 and 09 queued in backlog.
 
 ## Next Action
 
-Run `/gsd-new-milestone` to define v1.2 scope and requirements.
+Run `/gsd-new-milestone` to formalize v1.2 scope/requirements (or deploy 06+07 to HAOS first, then formalize).
 
-## Backlog
+## Executed (awaiting deploy)
 
-### Phase 06: Lovelace Card Language Toggle (BACKLOG)
+### Phase 06: Lovelace Card Language Toggle ✅
 
 **Goal:** Add a user-facing language switch in the FlyNow Lovelace card so the user explicitly chooses the UI language (SK/EN), independent of browser or HA locale defaults.
 **Source:** Post-v1.1 UAT feedback
-**Deferred at:** 2026-04-24
-**Tasks:**
-- [ ] Define UX for language selector placement and persistence behavior
-- [ ] Default to automatic detection only on first load, then always honor the user-selected language
-- [ ] Implement runtime text dictionary for at least Slovak and English
-- [ ] Wire toggle state into all card labels/messages
-- [ ] Verify behavior in HA with `sk` and `en` profiles
+**Status:** Executed `2bc1c8a` (2026-04-24), awaiting HAOS deploy.
+**Artifacts:** `.planning/phases/06-lovelace-card-language-toggle-backlog/`
 
-### Phase 07: Flight Log Import + Map Visualization (BACKLOG)
+### Phase 07: Flight Log Import + Map Visualization ✅
 
-**Goal:** Explore a future release where users can import flight records that include position and time data, visualize the track on a map, and **persist weather context for correlation**: what was **forecast** vs **observed reality** (wind speed and direction, and other agreed parameters) at flight time, alongside the flight itself—so we can compare prediction, reality, and the actual flight outcome.
-
-**Constraint:** Imports may happen **several days after the flight**. Weather enrichment must use **sources that support past dates** (archives / reanalysis / historical observation APIs), not only “current forecast” endpoints. Where FlyNow already computed a snapshot near flight time, prefer **persisting that snapshot at decision time** so delayed import does not depend on retroactive API availability.
+**Goal:** Allow users to import flight records (GPX/CSV with position + time), visualize tracks on a map, and persist immutable weather snapshots for forecast-vs-reality correlation. Delayed imports (days after flight) are first-class — provider chain `METAR → Open-Meteo archive → manual` and import never blocks on weather lookup failure.
 **Source:** Product direction / user request
-**Deferred at:** 2026-04-24
-**Tasks:**
-- [ ] Define supported import formats (e.g. GPX, CSV with lat/lon/timestamp) and validation rules
-- [ ] Extend or parallel the flight log model to store optional track points without breaking existing `flynow_flights.json` consumers
-- [ ] Specify **weather snapshot schema** per flight: timestamp/location anchor, **forecast** fields (e.g. surface/altitude wind, direction, ceiling, precip—aligned with FlyNow analyzer), and **reality** fields (source: METAR, personal log, or post-flight API—TBD)
-- [ ] On import (or on “finalize log”), capture or re-fetch **forecast-as-known-before-flight** vs **observations-at-flight-time** and store immutably on the record for later analysis
-- [ ] **Historical data strategy:** shortlist providers that allow query by `lat/lon` + **past** `datetime` (e.g. archive forecast APIs, station/METAR history, reanalysis—each with latency, resolution, and licensing notes); define primary + fallback chain when import is days late
-- [ ] Optional: when user logs or FlyNow evaluates a window, **write a compact weather snapshot to the flight record or a sidecar store** immediately, so delayed import mainly attaches track + merges existing snapshot
-- [ ] UI/reporting: side-by-side or overlay view showing forecast vs reality vs go/no-go and flight path (correlation-focused, not just pretty map)
-- [ ] Choose map stack (HA-friendly: static image, embedded map lib, or external link) and privacy constraints
-- [ ] Prototype import flow and map rendering in the card or a dedicated panel
-- [ ] Document backup/migration implications for larger track payloads and richer per-flight weather blobs
+**Status:** Executed 2026-04-28 across 3 plans (14 commits, last `60c9b29`), awaiting HAOS deploy.
+**Artifacts:** `.planning/phases/07-flight-log-import-map-visualization-backlog/` (CONTEXT, RESEARCH, PATTERNS, DISCUSSION-LOG, 3× PLAN+SUMMARY, LEARNINGS)
+**Key outcomes:**
+- Backend: `flight_import.py`, `flight_sidecar_store.py`, `weather_snapshot.py` (immutable base + append-only corrections)
+- Coordinator decision-time forecast freeze + import-fallback freeze
+- Frontend: typed contracts, isolated `map-renderer.ts` (Leaflet lifecycle), correlation panel with provenance + missing-weather states
+
+## Backlog
 
 ### Phase 08: Card Time Slider — Scrub Forecast Across Launch Sites (BACKLOG)
 
