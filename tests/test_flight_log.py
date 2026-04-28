@@ -190,6 +190,8 @@ async def test_import_flight_service_returns_uuid_linkage_and_warnings(tmp_path:
     assert imported["imported_point_count"] == 2
     assert len(imported["warnings"]) == 1
     assert imported["warnings"][0]["code"] == "invalid_point"
+    assert imported["weather_snapshot"]["weather_missing"] is True
+    assert imported["weather_snapshot"]["weather_missing_reason"]
 
     listed = await hass.services.call("flynow", SERVICE_LIST_FLIGHTS, {})
     assert listed["flights"] == []

@@ -164,6 +164,9 @@ async def test_coordinator_returns_three_site_projection(monkeypatch) -> None:
     assert result["sites"]["lzmada"]["site_name"] == "LZMADA — Malý Madaras"
     assert result["sites"]["katarinka"]["site_name"] == "Lúka pri Katarínke"
     assert result["sites"]["nitra-luka"]["site_name"] == "Lúka pri Nitre"
+    assert result["decision_snapshot"]["observed_source"] is None
+    assert result["decision_snapshot"]["weather_missing"] is False
+    assert result["decision_snapshot"]["frozen_at"]
 
 
 @pytest.mark.anyio
