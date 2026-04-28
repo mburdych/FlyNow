@@ -21,10 +21,13 @@ from .const import (
     FLIGHT_HISTORY_LIMIT,
     FLIGHT_LOG_FILENAME,
     FLIGHT_OUTCOMES,
+    SERVICE_IMPORT_FLIGHT,
     SERVICE_LIST_FLIGHTS,
     SERVICE_LOG_FLIGHT,
     SITE_IDS,
 )
+from .flight_import import parse_import_payload
+from .flight_sidecar_store import FlightSidecarStore
 
 try:
     from homeassistant.core import SupportsResponse
@@ -35,6 +38,7 @@ except ImportError:  # pragma: no cover
 
 _LOGGER = logging.getLogger(__name__)
 _STORE_KEY = "flight_log_store"
+_SIDECAR_STORE_KEY = "flight_sidecar_store"
 
 LOG_FLIGHT_SCHEMA = vol.Schema(
     {
@@ -52,6 +56,15 @@ LOG_FLIGHT_SCHEMA = vol.Schema(
 )
 
 LIST_FLIGHTS_SCHEMA = vol.Schema({}, extra=vol.PREVENT_EXTRA)
+IMPORT_FLIGHT_SCHEMA = vol.Schema(
+    {
+        vol.Required("format"): vol.In(("csv", "gpx")),
+        vol.Required("source_name"): vol.All(str, vol.Length(min=1, max=255)),
+        vol.Required("raw_payload"): vol.All(str, vol.Length(min=1)),
+        vol.Optional("flight_id"): vol.All(str, vol.Length(min=1, max=128)),
+    },
+    extra=vol.PREVENT_EXTRA,
+)
 
 
 def _validate_date(value: str) -> str:
@@ -161,7 +174,9 @@ async def async_register_services(hass: Any) -> None:
         return
 
     store = FlightLogStore(hass)
+    sidecar_store = FlightSidecarStore(hass)
     hass.data[DOMAIN][_STORE_KEY] = store
+    hass.data[DOMAIN][_SIDECAR_STORE_KEY] = sidecar_store
 
     async def _handle_log_flight(call: Any) -> dict[str, Any]:
         candidate_payload = dict(call.data)
@@ -176,6 +191,32 @@ async def async_register_services(hass: Any) -> None:
         flights = await store.async_list()
         return {"flights": flights}
 
+    async def _handle_import_flight(call: Any) -> dict[str, Any]:
+        payload = IMPORT_FLIGHT_SCHEMA(dict(call.data))
+        flight_id = payload.get("flight_id") or str(uuid4())
+        normalized = parse_import_payload(
+            str(payload["format"]),
+            str(payload["raw_payload"]),
+            source_name=str(payload["source_name"]),
+        )
+        sidecar_record = await sidecar_store.async_upsert(
+            {
+                "flight_id": flight_id,
+                "import_source": payload["source_name"],
+                "points": normalized["points"],
+                "warnings": normalized["warnings"],
+            }
+        )
+        return {
+            "flight_id": flight_id,
+            "schema_version": sidecar_record["schema_version"],
+            "imported_point_count": sidecar_record["summary"]["point_count"],
+            "warnings": normalized["warnings"],
+            "sidecar_linked": True,
+            "weather_missing": True,
+            "weather_missing_reason": "snapshot_not_captured_yet",
+        }
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_LOG_FLIGHT,
@@ -186,5 +227,11 @@ async def async_register_services(hass: Any) -> None:
         DOMAIN,
         SERVICE_LIST_FLIGHTS,
         _handle_list_flights,
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_IMPORT_FLIGHT,
+        _handle_import_flight,
         supports_response=SupportsResponse.ONLY,
     )
