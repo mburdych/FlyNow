@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 06 — Lovelace Card Language Toggle (executed `2bc1c8a`, awaiting HAOS deploy)
 status: unknown
-last_updated: "2026-04-28T12:35:00.356Z"
+last_updated: "2026-04-28T13:05:11.561Z"
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 1
+  total_plans: 4
   completed_plans: 1
-  percent: 100
+  percent: 25
 ---
 
 # Project State
@@ -66,3 +66,5 @@ Both bundled into next HAOS deploy (network access pending).
 2. **Run plan for backlog 09** (fog hardening bundle C4+C5+C6) and decide whether to promote it into formal v1.2 phase numbering.
 3. **Formalize v1.2 milestone** with `/gsd-new-milestone` once 2-3 phases are queued.
 4. **Extract learnings** from 06 via `/gsd-extract_learnings` to capture the typed-translation-dict pattern for future frontend i18n work.
+
+**Planned Phase:** 07 (Flight Log Import + Map Visualization (BACKLOG)) — 3 plans — 2026-04-28T13:05:11.537Z
