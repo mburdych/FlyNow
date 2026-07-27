@@ -51,7 +51,11 @@ export type TranslationKey =
   | "outcomeCancelledOther"
   | "siteLzmada"
   | "siteKatarinka"
-  | "siteNitraLuka";
+  | "siteNitraLuka"
+  | "sitePezinok"
+  | "siteDubova"
+  | "siteTrnavaKopanka"
+  | "meteoSite";
 
 export interface FlyNowConditionValue {
   value: number | string | null;
@@ -87,6 +91,7 @@ export interface FlyNowStatusAttributes {
   selected_site_id?: string;
   sites_summary?: Record<string, FlyNowSiteSummary>;
   sites?: Record<string, FlyNowSiteData>;
+  site_active_conditions?: Record<string, FlyNowConditionSet>;
   today_evening_go?: boolean;
   today_evening_launch_start?: string | null;
   today_evening_launch_end?: string | null;

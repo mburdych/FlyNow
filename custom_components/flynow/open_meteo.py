@@ -10,6 +10,7 @@ BASE_URL = "https://api.open-meteo.com/v1/forecast"
 
 HOURLY_FIELDS = [
     "wind_speed_10m",
+    "wind_speed_850hPa",
     "wind_speed_975hPa",
     "wind_speed_925hPa",
     "precipitation_probability",

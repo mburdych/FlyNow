@@ -117,10 +117,15 @@ class FlyNowCoordinator(DataUpdateCoordinator):
                     )
                     result_windows: dict[str, Any] = {}
                     for window in windows:
-                        result_windows[window["key"]] = {
-                            **window,
-                            **analyze_window(payload["hourly"], thresholds),
-                        }
+                        analysis = analyze_window(
+                            payload["hourly"],
+                            thresholds,
+                            launch_start=window["launch_start_dt"],
+                            launch_end=window["launch_end_dt"],
+                            flight_end=window["flight_end_dt"],
+                        )
+                        window_attrs = {k: v for k, v in window.items() if not k.endswith("_dt")}
+                        result_windows[window["key"]] = {**window_attrs, **analysis}
                     site_id = str(site["id"])
                     sites[site_id] = {
                         "site_id": site_id,

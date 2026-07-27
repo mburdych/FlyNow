@@ -109,22 +109,75 @@ def _fog_risk(hourly_slice: dict[str, list[Any]]) -> dict[str, Any]:
     }
 
 
-def analyze_window(hourly_slice: dict[str, list[Any]], config: dict[str, float]) -> dict[str, Any]:
-    """Analyze one window using worst-case values over the full duration."""
-    surface_wind = _safe_max(hourly_slice.get("wind_speed_10m"))
-    altitude_wind = max(
-        _safe_max(hourly_slice.get("wind_speed_975hPa")),
-        _safe_max(hourly_slice.get("wind_speed_925hPa")),
-    )
-    precip_prob = _safe_max(hourly_slice.get("precipitation_probability"))
-    visibility_km = _safe_min(hourly_slice.get("visibility"), default=0.0) / 1000.0
+def _safe_mean(values: list[Any] | None) -> float | None:
+    cleaned = _clean_numeric(values)
+    if not cleaned:
+        return None
+    return sum(cleaned) / len(cleaned)
+
+
+def _slice_hours(
+    hourly: dict[str, list[Any]],
+    from_dt: "datetime",
+    to_dt: "datetime",
+) -> dict[str, list[Any]]:
+    """Return hourly sub-lists whose hour buckets overlap [from_dt, to_dt).
+
+    Open-Meteo timestamps are hour starts (e.g. 19:00 means [19:00, 20:00)).
+    A short launch window like 19:11–19:41 must still pick the 19:00 sample —
+    point-in-range matching on exact hour stamps would return an empty slice
+    and force surface_wind to n/a → hard NO-GO.
+    """
+    from datetime import datetime as _dt
+    from datetime import timedelta
+
+    times = hourly.get("time", [])
+    indices: list[int] = []
+    for i, stamp in enumerate(times):
+        hour_start = _dt.fromisoformat(stamp)
+        hour_end = hour_start + timedelta(hours=1)
+        if hour_start < to_dt and hour_end > from_dt:
+            indices.append(i)
+    return {key: [vals[i] for i in indices] for key, vals in hourly.items() if key != "time"}
+
+
+def analyze_window(
+    hourly: dict[str, list[Any]],
+    config: dict[str, float],
+    launch_start: "datetime",
+    launch_end: "datetime",
+    flight_end: "datetime",
+) -> dict[str, Any]:
+    """Analyze window using time-aware slices.
+
+    surface_wind  — mean over launch window (decision time)
+    altitude_wind — mean over full flight (launch_start..flight_end), averaged across layers
+    precip/vis    — worst-case over entire window (launch_start..flight_end)
+    """
+    from datetime import datetime as _dt  # noqa: F401 — imported for _slice_hours closure
+
+    launch_slice = _slice_hours(hourly, launch_start, launch_end)
+    flight_slice = _slice_hours(hourly, launch_start, flight_end)
+
+    surface_wind = _safe_mean(launch_slice.get("wind_speed_10m"))
+
+    altitude_layers = [
+        _clean_numeric(flight_slice.get("wind_speed_850hPa")),
+        _clean_numeric(flight_slice.get("wind_speed_925hPa")),
+        _clean_numeric(flight_slice.get("wind_speed_975hPa")),
+    ]
+    all_altitude_values = [v for layer in altitude_layers for v in layer]
+    altitude_wind = (sum(all_altitude_values) / len(all_altitude_values)) if all_altitude_values else None
+
+    precip_prob = _safe_max(flight_slice.get("precipitation_probability"))
+    visibility_km = _safe_min(flight_slice.get("visibility"), default=0.0) / 1000.0
 
     checks = {
         "surface_wind_ms": _metric(surface_wind, config["max_surface_wind_ms"], "max"),
         "altitude_wind_ms": _metric(altitude_wind, config["max_altitude_wind_ms"], "max"),
         "precip_prob": _metric(precip_prob, config["max_precip_prob_pct"], "max"),
         "visibility_km": _metric(visibility_km, config["min_visibility_km"], "min"),
-        "fog_risk": _fog_risk(hourly_slice),
+        "fog_risk": _fog_risk(flight_slice),
     }
     blocking = [item["ok"] for item in checks.values() if item.get("blocking", True)]
     return {"go": all(blocking), "conditions": checks}

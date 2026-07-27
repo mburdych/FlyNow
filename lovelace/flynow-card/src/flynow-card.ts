@@ -23,7 +23,9 @@ import type {
 } from "./types";
 import { FlyNowMapRenderer } from "./map-renderer";
 
-const SITE_ORDER = ["lzmada", "katarinka", "nitra-luka"] as const;
+const PRIMARY_SITE_ORDER = ["lzmada", "katarinka", "nitra-luka"] as const;
+const METEO_SITE_OPTIONS = ["pezinok", "dubova", "trnava-kopanka"] as const;
+const ALL_SITE_ORDER = [...PRIMARY_SITE_ORDER, ...METEO_SITE_OPTIONS] as const;
 const BALLOON_IDS: readonly BalloonId[] = ["OM-0007", "OM-0008"] as const;
 const LAST_BALLOON_KEY = "flynow.last_balloon";
 const LANGUAGE_KEY = "flynow.card.language";
@@ -81,6 +83,10 @@ const TRANSLATIONS: Record<LanguageCode, Record<TranslationKey, string>> = {
     siteLzmada: "LZMADA - Maly Madaras",
     siteKatarinka: "Luka pri Katarinke",
     siteNitraLuka: "Luka pri Nitre",
+    sitePezinok: "Pezinok",
+    siteDubova: "Dubova",
+    siteTrnavaKopanka: "Trnava letisko Kopanka",
+    meteoSite: "Meteo location",
   },
   sk: {
     unavailable: "Karta FlyNow nie je dostupna.",
@@ -133,6 +139,10 @@ const TRANSLATIONS: Record<LanguageCode, Record<TranslationKey, string>> = {
     siteLzmada: "LZMADA - Maly Madaras",
     siteKatarinka: "Luka pri Katarinke",
     siteNitraLuka: "Luka pri Nitre",
+    sitePezinok: "Pezinok",
+    siteDubova: "Dubova",
+    siteTrnavaKopanka: "Trnava letisko Kopanka",
+    meteoSite: "Meteo lokalita",
   },
 };
 
@@ -148,6 +158,7 @@ export class FlyNowCard extends LitElement {
   private lastKnownAttributes?: FlyNowStatusAttributes;
   private usingStaleCache = false;
   private selectedDetailSiteId?: string;
+  private selectedMeteoSiteId: (typeof METEO_SITE_OPTIONS)[number] = METEO_SITE_OPTIONS[0];
   private flightHistory: LoggedFlight[] = [];
   private historyLoading = false;
   private flightSubmitState: "idle" | "saving" | "success" | "error" = "idle";
@@ -196,7 +207,7 @@ export class FlyNowCard extends LitElement {
     .sites-summary {
       display: grid;
       gap: 12px;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
     .site-tile {
       border: 1px solid var(--divider-color);
@@ -255,6 +266,16 @@ export class FlyNowCard extends LitElement {
       font-size: 12px;
       font-weight: 600;
       text-transform: uppercase;
+    }
+    .meteo-select {
+      width: 100%;
+      margin-top: 8px;
+      border: 1px solid var(--divider-color);
+      border-radius: 8px;
+      padding: 6px;
+      font: inherit;
+      color: var(--primary-text-color);
+      background: var(--card-background-color);
     }
     .site-tile.selected {
       border-color: var(--primary-color);
@@ -473,7 +494,8 @@ export class FlyNowCard extends LitElement {
             </div>`
           : nothing}
         <div class="sites-summary">
-          ${SITE_ORDER.map((siteId) => this.renderSiteTile(siteId, attrs))}
+          ${PRIMARY_SITE_ORDER.map((siteId) => this.renderSiteTile(siteId, attrs))}
+          ${this.renderMeteoSiteTile(attrs)}
         </div>
         <div class="selected-site-details">
           ${this.renderConditionSection(attrs)}
@@ -526,12 +548,44 @@ export class FlyNowCard extends LitElement {
     </button>`;
   }
 
+  private renderMeteoSiteTile(attrs: FlyNowStatusAttributes): TemplateResult {
+    const meteoSiteId = this.selectedMeteoSiteId;
+    const summary: FlyNowSiteSummary = attrs.sites_summary?.[meteoSiteId] ?? {};
+    const go = Boolean(summary.go);
+    const selected = this.getSelectedSiteId(attrs) === meteoSiteId;
+    return html`<button
+      type="button"
+      class="site-tile ${selected ? "selected" : ""}"
+      @click=${() => this.selectSite(meteoSiteId)}
+    >
+      <p class="site-name">${this.t("meteoSite")}</p>
+      <span class="status-chip ${go ? "go" : "no-go"}">${go ? this.t("go") : this.t("noGo")}</span>
+      <div class="launch-window">
+        ${summary.launch_start ?? this.t("na")} ${this.t("to")} ${summary.launch_end ?? this.t("na")}
+      </div>
+      <select
+        class="meteo-select"
+        .value=${meteoSiteId}
+        @click=${(event: Event) => event.stopPropagation()}
+        @change=${this.handleMeteoSiteChange}
+      >
+        ${METEO_SITE_OPTIONS.map(
+          (siteId) => html`<option value=${siteId}>${this.getSiteLabel(siteId)}</option>`
+        )}
+      </select>
+    </button>`;
+  }
+
   private renderConditionSection(attrs: FlyNowStatusAttributes): TemplateResult {
+    const siteId = this.getSelectedSiteId(attrs);
     const siteData = this.getSelectedSiteData(attrs);
     const active =
       (siteData?.active_window?.key as WindowKey | undefined) ?? this.getLegacyActiveWindow(attrs);
     const selectedConditions =
-      (active && siteData?.windows?.[active]?.conditions) || attrs[`${active}_conditions`] || {};
+      attrs.site_active_conditions?.[siteId] ||
+      (active && siteData?.windows?.[active]?.conditions) ||
+      attrs[`${active}_conditions`] ||
+      {};
     const conditions = selectedConditions as FlyNowConditionSet;
     const surfaceWind = conditions.surface_wind ?? conditions.surface_wind_ms;
     const altitudeWind = conditions.altitude_wind ?? conditions.altitude_wind_ms;
@@ -670,14 +724,11 @@ export class FlyNowCard extends LitElement {
   };
 
   private getSelectedSiteId(attrs: FlyNowStatusAttributes): string {
-    if (
-      this.selectedDetailSiteId &&
-      SITE_ORDER.includes(this.selectedDetailSiteId as (typeof SITE_ORDER)[number])
-    ) {
+    if (this.selectedDetailSiteId && this.isKnownSite(this.selectedDetailSiteId)) {
       return this.selectedDetailSiteId;
     }
     const preferred = attrs.selected_site_id ?? "lzmada";
-    if (SITE_ORDER.includes(preferred as (typeof SITE_ORDER)[number])) {
+    if (this.isKnownSite(preferred)) {
       this.selectedDetailSiteId = preferred;
       return preferred;
     }
@@ -697,6 +748,15 @@ export class FlyNowCard extends LitElement {
     }
     this.requestUpdate();
   }
+
+  private handleMeteoSiteChange = (event: Event): void => {
+    const target = event.target as HTMLSelectElement;
+    if (!this.isKnownSite(target.value)) {
+      return;
+    }
+    this.selectedMeteoSiteId = target.value as (typeof METEO_SITE_OPTIONS)[number];
+    this.selectSite(this.selectedMeteoSiteId);
+  };
 
   private renderFlightLogSection(attrs: FlyNowStatusAttributes): TemplateResult {
     const selectedSiteId = this.getSelectedSiteId(attrs);
@@ -759,7 +819,7 @@ export class FlyNowCard extends LitElement {
             .value=${this.logForm.site}
             @change=${this.handleInput}
           >
-            ${SITE_ORDER.map((siteId) => html`<option value=${siteId}>${this.getSiteLabel(siteId)}</option>`)}
+            ${ALL_SITE_ORDER.map((siteId) => html`<option value=${siteId}>${this.getSiteLabel(siteId)}</option>`)}
           </select>
         </label>
         <label>
@@ -913,7 +973,14 @@ export class FlyNowCard extends LitElement {
     if (siteId === "lzmada") return this.t("siteLzmada");
     if (siteId === "katarinka") return this.t("siteKatarinka");
     if (siteId === "nitra-luka") return this.t("siteNitraLuka");
+    if (siteId === "pezinok") return this.t("sitePezinok");
+    if (siteId === "dubova") return this.t("siteDubova");
+    if (siteId === "trnava-kopanka") return this.t("siteTrnavaKopanka");
     return siteId;
+  }
+
+  private isKnownSite(siteId: string): siteId is (typeof ALL_SITE_ORDER)[number] {
+    return ALL_SITE_ORDER.includes(siteId as (typeof ALL_SITE_ORDER)[number]);
   }
 
   private formatNumber(value: number | null | undefined): string {

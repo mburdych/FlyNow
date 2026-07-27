@@ -18,6 +18,8 @@ CONF_MAX_SURFACE_WIND_MS = "max_surface_wind_ms"
 CONF_MAX_ALTITUDE_WIND_MS = "max_altitude_wind_ms"
 CONF_MAX_PRECIP_PROB_PCT = "max_precip_prob_pct"
 CONF_MIN_VISIBILITY_KM = "min_visibility_km"
+# Backward-compatibility for older deployed coordinator/config_flow versions.
+CONF_MIN_CEILING_M = "min_ceiling_m"
 CONF_CREW_NOTIFIER = "crew_notifier"
 CONF_PILOT_NOTIFIER = "pilot_notifier"
 CONF_WHATSAPP_NOTIFIER = "whatsapp_notifier"
@@ -34,6 +36,7 @@ DEFAULT_MAX_SURFACE_WIND_MS = 4.0
 DEFAULT_MAX_ALTITUDE_WIND_MS = 10.0
 DEFAULT_MAX_PRECIP_PROB_PCT = 20
 DEFAULT_MIN_VISIBILITY_KM = 5.0
+DEFAULT_MIN_CEILING_M = 1500
 DEFAULT_CREW_NOTIFIER = "notify.crew_phone"
 DEFAULT_PILOT_NOTIFIER = "notify.pilot_phone"
 DEFAULT_WHATSAPP_NOTIFIER = "notify.whatsapp_group"
@@ -54,6 +57,8 @@ MIN_PRECIP_PROB_PCT = 0
 MAX_PRECIP_PROB_PCT = 100
 MIN_VISIBILITY_KM = 0.0
 MAX_VISIBILITY_KM = 30.0
+MIN_CEILING_M = 0
+MAX_CEILING_M = 10000
 
 SLOVAK_DAY_NAMES = {
     0: "Pondelok",
@@ -102,8 +107,39 @@ SITE_CATALOG: Final[tuple[dict[str, object], ...]] = (
         "elevation_m": 141,
         "kraj_code": "NSK",
     },
+    {
+        "id": "pezinok",
+        "name": "Pezinok",
+        "lat": 48.2894500,
+        "lon": 17.2663700,
+        "elevation_m": 152,
+        "kraj_code": "BSK",
+    },
+    {
+        "id": "dubova",
+        "name": "Dubová",
+        "lat": 48.3380500,
+        "lon": 17.2874800,
+        "elevation_m": 253,
+        "kraj_code": "BSK",
+    },
+    {
+        "id": "trnava-kopanka",
+        "name": "Trnava letisko Kopánka",
+        "lat": 48.3924500,
+        "lon": 17.6061600,
+        "elevation_m": 146,
+        "kraj_code": "TTSK",
+    },
 )
-SITE_IDS: Final[tuple[str, ...]] = ("lzmada", "katarinka", "nitra-luka")
+SITE_IDS: Final[tuple[str, ...]] = (
+    "lzmada",
+    "katarinka",
+    "nitra-luka",
+    "pezinok",
+    "dubova",
+    "trnava-kopanka",
+)
 DEFAULT_SELECTED_SITE_ID = "lzmada"
 
 NOTIF_DEDUP_COOLDOWN_SEC = 3600
