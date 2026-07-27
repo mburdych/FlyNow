@@ -49,7 +49,7 @@ const TRANSLATIONS: Record<LanguageCode, Record<TranslationKey, string>> = {
     altitudeWind: "Altitude wind",
     precipitation: "Precipitation probability",
     visibility: "Visibility",
-    threshold: "threshold",
+    threshold: "limit",
     pass: "PASS",
     fail: "FAIL",
     info: "INFO",
@@ -87,6 +87,23 @@ const TRANSLATIONS: Record<LanguageCode, Record<TranslationKey, string>> = {
     siteDubova: "Dubova",
     siteTrnavaKopanka: "Trnava letisko Kopanka",
     meteoSite: "Meteo location",
+    forecastVsObserved: "Forecast vs observed",
+    observedSource: "Observed source",
+    weatherMissing: "Weather missing",
+    weatherMissingReason: "Reason",
+    corrections: "Corrections",
+    importWarnings: "Import warnings",
+    flightTrackMap: "Flight track map",
+    trackPoints: "Track points",
+    yes: "yes",
+    no: "no",
+    fogRiskLow: "LOW",
+    fogRiskLowMedium: "LOW-MEDIUM",
+    fogRiskMedium: "MEDIUM",
+    fogRiskHigh: "HIGH",
+    fogTrendStable: "stable",
+    fogTrendImproving: "improving",
+    fogTrendWorsening: "worsening",
   },
   sk: {
     unavailable: "Karta FlyNow nie je dostupna.",
@@ -105,7 +122,7 @@ const TRANSLATIONS: Record<LanguageCode, Record<TranslationKey, string>> = {
     altitudeWind: "Vietor vo vyske",
     precipitation: "Pravdepodobnost zrazok",
     visibility: "Dohladnost",
-    threshold: "limit",
+    threshold: "hranica",
     pass: "OK",
     fail: "ZLE",
     info: "INFO",
@@ -143,6 +160,23 @@ const TRANSLATIONS: Record<LanguageCode, Record<TranslationKey, string>> = {
     siteDubova: "Dubova",
     siteTrnavaKopanka: "Trnava letisko Kopanka",
     meteoSite: "Meteo lokalita",
+    forecastVsObserved: "Predpoved vs meranie",
+    observedSource: "Zdroj merania",
+    weatherMissing: "Chybajuce pocasie",
+    weatherMissingReason: "Dovod",
+    corrections: "Korekcie",
+    importWarnings: "Varovania importu",
+    flightTrackMap: "Mapa trate letu",
+    trackPoints: "Body trate",
+    yes: "ano",
+    no: "nie",
+    fogRiskLow: "NIZKE",
+    fogRiskLowMedium: "NIZKE-STREDNE",
+    fogRiskMedium: "STREDNE",
+    fogRiskHigh: "VYSOKE",
+    fogTrendStable: "stabilne",
+    fogTrendImproving: "zlepsuje sa",
+    fogTrendWorsening: "zhorsuje sa",
   },
 };
 
@@ -626,8 +660,8 @@ export class FlyNowCard extends LitElement {
     if (!item) {
       return html``;
     }
-    const risk = this.formatValue(item.value).toUpperCase();
-    const trend = item.trend ? ` (${item.trend})` : "";
+    const risk = this.formatFogRiskValue(item.value);
+    const trend = item.trend ? ` (${this.formatFogTrend(item.trend)})` : "";
     const riskClass = this.fogRiskClass(item.value);
     const badge = this.fogRiskBadge(item.value);
     return html`<div class="condition-row">
@@ -635,6 +669,34 @@ export class FlyNowCard extends LitElement {
       <span>${risk}${trend}</span>
       <span class="${riskClass}">${badge}</span>
     </div>`;
+  }
+
+  private formatFogRiskValue(value: number | string | null | undefined): string {
+    switch (value) {
+      case "high":
+        return this.t("fogRiskHigh");
+      case "medium":
+        return this.t("fogRiskMedium");
+      case "low-medium":
+        return this.t("fogRiskLowMedium");
+      case "low":
+        return this.t("fogRiskLow");
+      default:
+        return this.formatValue(value).toUpperCase();
+    }
+  }
+
+  private formatFogTrend(trend: string): string {
+    switch (trend) {
+      case "stable":
+        return this.t("fogTrendStable");
+      case "improving":
+        return this.t("fogTrendImproving");
+      case "worsening":
+        return this.t("fogTrendWorsening");
+      default:
+        return trend;
+    }
   }
 
   private fogRiskClass(value: number | string | null | undefined): string {
@@ -693,22 +755,22 @@ export class FlyNowCard extends LitElement {
       {};
     const warnings: FlyNowImportWarning[] = attrs.import_warnings ?? [];
     return html`<section class="correlation-section">
-      <h3 class="section-title">Forecast vs observed</h3>
-      <div>Observed source: ${summary.observed_source ?? this.t("na")}</div>
-      <div>Weather missing: ${summary.weather_missing ? "yes" : "no"}</div>
+      <h3 class="section-title">${this.t("forecastVsObserved")}</h3>
+      <div>${this.t("observedSource")}: ${summary.observed_source ?? this.t("na")}</div>
+      <div>${this.t("weatherMissing")}: ${summary.weather_missing ? this.t("yes") : this.t("no")}</div>
       ${summary.weather_missing
-        ? html`<div>Reason: ${summary.weather_missing_reason ?? this.t("na")}</div>`
+        ? html`<div>${this.t("weatherMissingReason")}: ${summary.weather_missing_reason ?? this.t("na")}</div>`
         : nothing}
-      <div>Corrections: ${summary.correction_count ?? 0}</div>
-      <div>Import warnings: ${warnings.length}</div>
+      <div>${this.t("corrections")}: ${summary.correction_count ?? 0}</div>
+      <div>${this.t("importWarnings")}: ${warnings.length}</div>
     </section>`;
   }
 
   private renderMapSection(trackSummary: FlyNowTrackSummary | undefined): TemplateResult {
     const pointCount = trackSummary?.point_count ?? trackSummary?.points_preview?.length ?? 0;
     return html`<section class="map-section">
-      <h3 class="section-title">Flight track map</h3>
-      <div>Track points: ${pointCount}</div>
+      <h3 class="section-title">${this.t("flightTrackMap")}</h3>
+      <div>${this.t("trackPoints")}: ${pointCount}</div>
       <div
         class="map-container"
         ${this.setMapContainer}
@@ -987,7 +1049,7 @@ export class FlyNowCard extends LitElement {
     if (value === null || value === undefined || Number.isNaN(value)) {
       return this.t("na");
     }
-    return `${value}`;
+    return `${Number(value.toFixed(2))}`;
   }
 
   private formatValue(value: number | string | null | undefined): string {

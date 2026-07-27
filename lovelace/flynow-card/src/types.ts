@@ -55,7 +55,24 @@ export type TranslationKey =
   | "sitePezinok"
   | "siteDubova"
   | "siteTrnavaKopanka"
-  | "meteoSite";
+  | "meteoSite"
+  | "forecastVsObserved"
+  | "observedSource"
+  | "weatherMissing"
+  | "weatherMissingReason"
+  | "corrections"
+  | "importWarnings"
+  | "flightTrackMap"
+  | "trackPoints"
+  | "yes"
+  | "no"
+  | "fogRiskLow"
+  | "fogRiskLowMedium"
+  | "fogRiskMedium"
+  | "fogRiskHigh"
+  | "fogTrendStable"
+  | "fogTrendImproving"
+  | "fogTrendWorsening";
 
 export interface FlyNowConditionValue {
   value: number | string | null;
