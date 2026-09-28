@@ -126,6 +126,16 @@ class FlyNowCoordinator(DataUpdateCoordinator):
                         )
                         window_attrs = {k: v for k, v in window.items() if not k.endswith("_dt")}
                         result_windows[window["key"]] = {**window_attrs, **analysis}
+                    # Nearest upcoming launch — not dict insertion order (evenings
+                    # before mornings would skip an earlier morning after dusk).
+                    nearest = (
+                        min(windows, key=lambda item: item["launch_start_dt"])
+                        if windows
+                        else None
+                    )
+                    active = (
+                        result_windows.get(str(nearest["key"])) if nearest else None
+                    )
                     site_id = str(site["id"])
                     sites[site_id] = {
                         "site_id": site_id,
@@ -133,7 +143,7 @@ class FlyNowCoordinator(DataUpdateCoordinator):
                         "kraj_code": str(site["kraj_code"]),
                         "elevation_m": int(site["elevation_m"]),
                         "windows": result_windows,
-                        "active_window": next(iter(result_windows.values()), None),
+                        "active_window": active,
                     }
         except OpenMeteoError as err:
             raise UpdateFailed(str(err)) from err

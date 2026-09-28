@@ -39,7 +39,10 @@ def build_windows(
 
     Evening logic:
       - launch_end_dt   = civil_dusk - flight_duration  (latest possible launch)
-      - launch_start_dt = max(earliest_allowed, launch_end_dt - decision_window)
+      - launch_start_dt = launch_end_dt - decision_window, optionally floored to 18:30
+        when dusk still leaves room after 18:30. If dusk is early (autumn), keep the
+        decision window ending at launch_end even before 18:30 — otherwise every
+        evening slot disappears and the card jumps to tomorrow morning.
       - flight_end_dt   = civil_dusk  (worst-case flight end)
     """
     windows: list[dict] = []
@@ -51,7 +54,12 @@ def build_windows(
             hour=EVENING_EARLIEST_LAUNCH_HOUR,
             minute=EVENING_EARLIEST_LAUNCH_MINUTE,
         )
-        earliest_launch = max(earliest_allowed, latest_launch - timedelta(minutes=DECISION_WINDOW_MIN))
+        decision_start = latest_launch - timedelta(minutes=DECISION_WINDOW_MIN)
+        # Prefer 18:30+ only when latest launch is still after that floor.
+        if latest_launch > earliest_allowed:
+            earliest_launch = max(earliest_allowed, decision_start)
+        else:
+            earliest_launch = decision_start
         if now_local <= latest_launch and earliest_launch < latest_launch:
             windows.append(
                 {
