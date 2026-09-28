@@ -23,7 +23,7 @@
           "update_interval_min": "Update interval (min)"
         },
         "data_description": {
-          "flight_duration_min": "Expected time in the air for one flight.",
+          "flight_duration_min": "Time in the air for one flight, 45 to 75 minutes. The evening launch ends this many minutes before civil dusk.",
           "prep_time_min": "Buffer before takeoff used for setup and checks.",
           "update_interval_min": "How often FlyNow refreshes forecast data."
         }

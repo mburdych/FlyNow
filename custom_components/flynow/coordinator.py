@@ -16,6 +16,8 @@ from .const import (
     CONF_CALENDAR_ENTITY,
     CONF_CREW_NOTIFIER,
     CONF_FLIGHT_DURATION_MIN,
+    MAX_FLIGHT_DURATION_MIN,
+    MIN_FLIGHT_DURATION_MIN,
     CONF_MAX_ALTITUDE_WIND_MS,
     CONF_MAX_PRECIP_PROB_PCT,
     CONF_PILOT_NOTIFIER,
@@ -106,13 +108,18 @@ class FlyNowCoordinator(DataUpdateCoordinator):
                         sunrise_by_day=sunrise,
                         sunset_by_day=sunset,
                     )
+                    flight_duration_min = int(self._config[CONF_FLIGHT_DURATION_MIN])
+                    flight_duration_min = min(
+                        MAX_FLIGHT_DURATION_MIN,
+                        max(MIN_FLIGHT_DURATION_MIN, flight_duration_min),
+                    )
                     windows = build_windows(
                         now_local=now_local,
                         day_start_by_day=day_start,
                         day_end_by_day=day_end,
                         sunrise_by_day=sunrise,
                         sunset_by_day=sunset,
-                        flight_duration_min=int(self._config[CONF_FLIGHT_DURATION_MIN]),
+                        flight_duration_min=flight_duration_min,
                         prep_time_min=int(self._config[CONF_PREP_TIME_MIN]),
                     )
                     result_windows: dict[str, Any] = {}

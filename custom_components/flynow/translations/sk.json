@@ -23,7 +23,7 @@
           "update_interval_min": "Interval aktualizácie (min)"
         },
         "data_description": {
-          "flight_duration_min": "Predpokladané trvanie jedného letu.",
+          "flight_duration_min": "Trvanie jedného letu, 45 až 75 minút. Večerný štart končí toľko minút pred občianskym súmrakom.",
           "prep_time_min": "Časová rezerva pred štartom na prípravu a kontrolu.",
           "update_interval_min": "Ako často FlyNow obnovuje predpoveď počasia."
         }
