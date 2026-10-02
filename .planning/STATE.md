@@ -79,6 +79,7 @@ All bundled into next HAOS deploy (network access pending).
 
 ## Next Steps
 
+0. **Notify + WuzAPI** — GO notifikácie mieria na neexistujúce `notify.crew_phone` / `notify.pilot_phone` / `notify.whatsapp_group`. Poznámka: `.planning/NOTIFY-WUZAPI.md`.
 1. **Deploy** `f398b3e` + `2bc1c8a` + Phase 07 commits to HAOS on home network — tar-over-SSH commands in `.planning/reference/HAOS-DEPLOYMENT.md`. After deploy, bump card resource version, verify config entry version=2 (migration), and smoke-test import service + map render.
 2. **Finish phase 09 planning** — CONTEXT + DISCUSSION-LOG already exist; run `/gsd-plan-phase 09` to produce PLAN.md, then execute fog hardening bundle (C4+C5+C6).
 3. **Plan phase 08** (card time slider) once 07 deploy is verified — phase dir exists but no artifacts yet.
